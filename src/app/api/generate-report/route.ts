@@ -8,19 +8,19 @@ type ThreadMessage = {
   }[];
 };
 
-// ✅ Handle OPTIONS prasaseflight requests
+// ✅ Handle OPTIONS preflight requests
 export async function OPTIONS() {
   return NextResponse.json({}, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*', // Or restrict to 'https://app.gohighlevel.com'
+      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
 }
 
-// ✅ Your POST handler
+// ✅ POST handler
 export async function POST(req: NextRequest) {
   const { creditText } = await req.json();
 
@@ -34,21 +34,17 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Create thread
     const thread = await openai.beta.threads.create();
 
-    // Add message
     await openai.beta.threads.messages.create(thread.id, {
       role: 'user',
       content: `Here is a new credit report:\n\n${creditText}`,
     });
 
-    // Start run
     const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: 'asst_M0u0phtt14WrV0FYOHB3yDqF',
     });
 
-    // Poll for status
     let runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id });
 
     while (!['completed', 'failed', 'cancelled', 'expired'].includes(runStatus.status)) {
@@ -60,7 +56,6 @@ export async function POST(req: NextRequest) {
       throw new Error(`Run failed with status: ${runStatus.status}`);
     }
 
-    // Get messages
     const messages = await openai.beta.threads.messages.list(thread.id);
 
     const textBlocks: string[] = messages.data.flatMap((m: ThreadMessage) =>
@@ -88,10 +83,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // ✅ Encode HTML as base64 download URL
+    const encodedHtml = Buffer.from(html).toString('base64');
+    const downloadUrl = `data:text/html;base64,${encodedHtml}`;
+
     return NextResponse.json({
       html,
       markdown,
       fileLink: fileLink || null,
+      downloadUrl, // 👈 for client-side anchor download
       message: 'Report generation completed successfully.',
     }, {
       status: 200,
@@ -110,4 +110,4 @@ export async function POST(req: NextRequest) {
     });
   }
 }
-// ✅ Handle GET requests if needed
+// ✅ Export config to disable default CORS handling
