@@ -1,5 +1,6 @@
 import { openai } from '@/lib/openai';
 import { NextRequest, NextResponse } from 'next/server';
+import type { ThreadMessage } from 'openai/resources/beta/threads/messages/messages';
 
 export async function POST(req: NextRequest) {
   const { creditText } = await req.json();
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     console.log('Run started:', run.id);
 
-    // Step 4: Wait until run completes
+    // Step 4: Wait for run to complete
     let runStatus = await openai.beta.threads.runs.retrieve(run.id, {
       thread_id: thread.id,
     });
@@ -43,15 +44,16 @@ export async function POST(req: NextRequest) {
       throw new Error(`Run failed with status: ${runStatus.status}`);
     }
 
-    // Step 5: Fetch thread messages
+    // Step 5: Get thread messages
     const messages = await openai.beta.threads.messages.list(thread.id);
 
-    const textBlocks: string[] = messages.data.flatMap((m: any) =>
-      (m.content as any[])
+    const textBlocks: string[] = messages.data.flatMap((m: ThreadMessage) =>
+      (m.content as { type: string; text?: { value: string } }[])
         .filter((c) => c.type === 'text' && c.text?.value)
-        .map((c) => c.text.value)
+        .map((c) => c.text!.value)
     );
 
+    // Step 6: Extract outputs
     const html = textBlocks.find((t) => t.includes('<html>')) || '';
     const markdown = textBlocks.find((t) =>
       t.trim().startsWith('#') ||
@@ -59,7 +61,6 @@ export async function POST(req: NextRequest) {
       t.includes('```')
     ) || '';
 
-    // Step 6: Try checking for file-based output (URLs or attachments)
     const fileLink = textBlocks.find((t) =>
       t.includes('http') && (t.includes('.html') || t.includes('.pdf'))
     );
@@ -76,8 +77,9 @@ export async function POST(req: NextRequest) {
       message: 'Report generation completed successfully.',
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('API error:', err);
-    return NextResponse.json({ error: err.message || 'Something went wrong' }, { status: 500 });
+    const errorMessage = err instanceof Error ? err.message : 'Something went wrong';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
