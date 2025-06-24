@@ -1,6 +1,11 @@
 import { openai } from '@/lib/openai';
 import { NextRequest, NextResponse } from 'next/server';
-import type { ThreadMessage } from 'openai/resources/beta/threads/messages/messages';
+type ThreadMessage = {
+  content: {
+    type: string;
+    text?: { value: string };
+  }[];
+};
 
 export async function POST(req: NextRequest) {
   const { creditText } = await req.json();
