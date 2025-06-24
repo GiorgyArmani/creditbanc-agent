@@ -8,7 +8,7 @@ type ThreadMessage = {
   }[];
 };
 
-// ✅ Handle OPTIONS preflight requests
+// ✅ Handle OPTIONS prasaseflight requests
 export async function OPTIONS() {
   return NextResponse.json({}, {
     status: 200,
