@@ -1,5 +1,6 @@
 import { openai } from '@/lib/openai';
 import { NextRequest, NextResponse } from 'next/server';
+
 type ThreadMessage = {
   content: {
     type: string;
@@ -7,11 +8,28 @@ type ThreadMessage = {
   }[];
 };
 
+// Handle CORS preflight request
+export async function OPTIONS() {
+  return NextResponse.json({}, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*', // or 'https://app.gohighlevel.com' for restricted use
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
+
 export async function POST(req: NextRequest) {
   const { creditText } = await req.json();
 
   if (!creditText) {
-    return NextResponse.json({ error: 'Missing creditText' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing creditText' }, {
+      status: 400,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
   }
 
   try {
@@ -72,7 +90,12 @@ export async function POST(req: NextRequest) {
 
     if (!html && !markdown && !fileLink) {
       console.warn('No HTML or Markdown found. Assistant output:', textBlocks);
-      return NextResponse.json({ error: 'Markdown or HTML output not found', debug: textBlocks }, { status: 500 });
+      return NextResponse.json({ error: 'Markdown or HTML output not found', debug: textBlocks }, {
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
     }
 
     return NextResponse.json({
@@ -80,11 +103,20 @@ export async function POST(req: NextRequest) {
       markdown,
       fileLink: fileLink || null,
       message: 'Report generation completed successfully.',
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
     });
 
   } catch (err: unknown) {
     console.error('API error:', err);
     const errorMessage = err instanceof Error ? err.message : 'Something went wrong';
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, {
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
   }
 }
