@@ -15,19 +15,21 @@ type AssistantMessage = {
 function parseMarkdownToData(markdown: string): CreditReportData {
   const extractTable = (sectionTitle: string): string[][] => {
     const section = markdown.split(sectionTitle)[1]?.split('\n\n')[0] || '';
-    const lines = section.split('\n').filter((line) => line.startsWith('|'));
-    if (lines.length < 3) return [];
+    const lines = section.split('\n').filter((line) => line.trim().startsWith('|'));
+
+    if (lines.length < 3) return []; // not enough rows for a table
+
     return lines
-      .slice(2)
-      .map((line) => line.split('|').slice(1, -1).map((cell) => cell.trim()));
+      .slice(2) // skip table header and separator
+      .map(line => line.split('|').slice(1, -1).map(cell => cell.trim()));
   };
 
   const extractBullets = (sectionTitle: string): string[] => {
     const section = markdown.split(sectionTitle)[1]?.split('\n\n')[0] || '';
     return section
       .split('\n')
-      .filter((line) => line.trim().startsWith('- '))
-      .map((line) => line.replace('- ', '').trim());
+      .filter(line => line.trim().startsWith('- '))
+      .map(line => line.replace('- ', '').trim());
   };
 
   return {
@@ -42,6 +44,7 @@ function parseMarkdownToData(markdown: string): CreditReportData {
     installmentAccounts: extractTable('## Non-Revolving Installment Accounts') || [],
   };
 }
+
 
 export async function OPTIONS() {
   return NextResponse.json({}, {
