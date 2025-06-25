@@ -13,11 +13,65 @@ import CreditAuditPitch from "@/components/credit-audit-pitch"
 import CalendarEmbed from "@/components/calendar-embed"
 import CreditMonitoringPitch from "@/components/credit-monitoring-pitch"
 
+type Lesson =
+  | {
+      id: number
+      title: string
+      type: 'video'
+      duration: string
+      completed: boolean
+      current?: boolean
+      videoUrl: string
+    }
+  | {
+      id: number
+      title: string
+      type: 'pdf'
+      duration: string
+      completed: boolean
+      current?: boolean
+      pdfUrl: string
+      pdfTitle?: string
+    }
+  | {
+      id: number
+      title: string
+      type: 'embed'
+      duration: string
+      completed: boolean
+      current?: boolean
+      embedUrl: string
+      fallbackUrl: string
+    }
+  | {
+      id: number
+      title: string
+      type: 'checklist'
+      duration: string
+      completed: boolean
+      current?: boolean
+    }
+  | {
+      id: number
+      title: string
+      type: 'pitch'
+      duration: string
+      completed: boolean
+      current?: boolean
+    }
+
+type Module = {
+  id: number
+  title: string
+  description: string
+  progress: number
+  lessons: Lesson[]
+}
+
 export default function ModulePage({ params }: { params: { id: string } }) {
   const moduleId = Number.parseInt(params.id)
 
-  // Mock data - in real app, fetch based on moduleId
-  const getModuleData = (id: number) => {
+  const getModuleData = (id: number): Module => {
     switch (id) {
       case 1:
         return {
@@ -102,7 +156,6 @@ export default function ModulePage({ params }: { params: { id: string } }) {
   }
 
   const module = getModuleData(moduleId)
-
   const currentLesson = module.lessons.find((lesson) => lesson.current) || module.lessons[0]
 
   return (
