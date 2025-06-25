@@ -96,10 +96,24 @@ export async function POST(req: NextRequest) {
         .map((c) => (c.type === 'text' ? c.text!.value : c.text))
     );
 
-    const html = textBlocks.find((t) => t.includes('<html>')) || '';
-    const markdown = textBlocks.find(
-      (t) => t.trim().startsWith('#') || t.includes('**Client Information') || t.includes('```')
-    ) || '';
+   const html =
+  textBlocks.find(
+    (t) =>
+      t.includes('<html>') ||
+      t.includes('<table') ||
+      t.includes('<p') ||
+      t.includes('<img')
+  ) || '';
+
+const markdown =
+  textBlocks.find(
+    (t) =>
+      t.trim().startsWith('#') ||
+      t.includes('**Client Information') ||
+      t.includes('```') ||
+      t.includes('| Bureau |')
+  ) || '';
+
 
     if (!html || !markdown) {
       return NextResponse.json({ error: 'Expected outputs not found in assistant response' }, { status: 500 });
