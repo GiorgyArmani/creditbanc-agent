@@ -1,7 +1,7 @@
 import { openai } from '@/lib/openai';
 import { supabase } from '@/lib/supabase';
 import { NextRequest, NextResponse } from 'next/server';
-import puppeteer from 'puppeteer';
+import { chromium } from 'playwright';
 
 // Types for parsing messages
 type TextBlock = {
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
         .map((c: any) => c.type === 'text' ? c.text.value : c.text)
     );
 
-    // Step 6: Select HTML/Markdown/Links
+    // Step 6: Select HTML/Markdown
     const html = textBlocks.find((t) => t.includes('<html>')) || '';
     const markdown = textBlocks.find((t) =>
       t.trim().startsWith('#') ||
@@ -97,11 +97,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Step 7: Convert HTML to PDF
-    const browser = await puppeteer.launch();
+    // Step 7: Convert HTML to PDF using Playwright
+    const browser = await chromium.launch();
     const page = await browser.newPage();
-    await page.setContent(html);
-    const pdfBuffer = await page.pdf({ format: 'A4' });
+    await page.setContent(html, { waitUntil: 'load' });
+    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
     await browser.close();
 
     // Step 8: Upload PDF to Supabase
