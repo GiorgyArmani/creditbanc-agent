@@ -1,165 +1,89 @@
-import { openai } from '@/lib/openai';
-import React from 'react';
-import { supabase } from '@/lib/supabase';
-import { NextRequest, NextResponse } from 'next/server';
-import { renderToBuffer } from '@react-pdf/renderer';
-import type { CreditReportData } from '@/components/pdf/credit-report-pdf';
-import CreditReportPDF from '@/components/pdf/credit-report-pdf'; // ✅ Required import added
+'use client';
 
-type AssistantMessage = {
-  content?: Array<
-    | { type: 'text'; text?: { value: string } }
-    | { type: 'code'; text: string; language?: string }
-  >;
-};
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
-// ✅ Parse markdown into structured data
-function parseMarkdownToData(markdown: string): CreditReportData {
-  const extractTable = (sectionTitle: string) => {
-    const section = markdown.split(sectionTitle)[1]?.split('\n\n')[0] || '';
-    const lines = section.split('\n').filter((line) => line.startsWith('|'));
-    return lines
-      .slice(2)
-      .map((line) => line.split('|').slice(1, -1).map((cell) => cell.trim()));
-  };
+export default function ChatPage() {
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
-  const extractBullets = (sectionTitle: string) => {
-    const section = markdown.split(sectionTitle)[1]?.split('\n\n')[0] || '';
-    return section
-      .split('\n')
-      .filter((line) => line.trim().startsWith('- '))
-      .map((line) => line.replace('- ', '').trim());
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
 
-  return {
-    fullName: markdown.match(/Full Name:\s*(.*)/)?.[1]?.trim() || 'Unknown',
-    reportDate: markdown.match(/Report Date:\s*(.*)/)?.[1]?.trim() || 'Unknown',
-    scores: extractTable('## Credit Scores'),
-    summary: extractTable('## Account Summary'),
-    revolvingAccounts: extractTable('## Open Revolving Accounts'),
-    revolvingStats: extractTable('## Summary Stats'),
-    scoreImprovementTips: extractBullets('## Estimated FICO Score Increase'),
-    alerts: extractBullets('## Flags or Alerts'),
-    installmentAccounts: extractTable('## Non-Revolving Installment Accounts'),
-  };
-}
+    setMessages(prev => [...prev, `You: ${input}`]);
+    setLoading(true);
 
-export async function OPTIONS() {
-  return NextResponse.json(
-    {},
-    {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    }
-  );
-}
-
-export async function POST(req: NextRequest) {
-  const { creditText } = await req.json();
-
-  if (!creditText) {
-    return NextResponse.json(
-      { error: 'Missing creditText' },
-      {
-        status: 400,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-      }
-    );
-  }
-
-  try {
-    const thread = await openai.beta.threads.create();
-
-    await openai.beta.threads.messages.create(thread.id, {
-      role: 'user',
-      content: `Here is a new credit report:\n\n${creditText}`,
-    });
-
-    const run = await openai.beta.threads.runs.create(thread.id, {
-      assistant_id: 'asst_M0u0phtt14WrV0FYOHB3yDqF',
-    });
-
-    let runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id });
-    while (!['completed', 'failed', 'cancelled', 'expired'].includes(runStatus.status)) {
-      await new Promise((res) => setTimeout(res, 2000));
-      runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id });
-    }
-
-    if (runStatus.status !== 'completed') {
-      throw new Error(`Run failed with status: ${runStatus.status}`);
-    }
-
-    const messages = await openai.beta.threads.messages.list(thread.id);
-    const textBlocks: string[] = (messages.data as AssistantMessage[]).flatMap((m) =>
-      (m.content ?? [])
-        .filter(
-          (c) =>
-            (c.type === 'text' && !!c.text?.value) ||
-            (c.type === 'code' && ['html', 'markdown'].includes(c.language || '') && !!c.text)
-        )
-        .map((c) => (c.type === 'text' ? c.text!.value : c.text))
-    );
-
-    const html = textBlocks.find((t) => t.includes('<html>')) || '';
-    const markdown =
-      textBlocks.find(
-        (t) =>
-          t.trim().startsWith('#') ||
-          t.includes('**Client Information') ||
-          t.includes('```')
-      ) || '';
-
-    if (!html || !markdown) {
-      return NextResponse.json(
-        { error: 'Expected outputs not found in assistant response' },
-        {
-          status: 500,
-          headers: { 'Access-Control-Allow-Origin': '*' },
-        }
-      );
-    }
-
-    const structuredData = parseMarkdownToData(markdown);
-    const pdfBuffer = await renderToBuffer(<CreditReportPDF data={structuredData} />);
-
-    const filename = `${Date.now()}_CreditBanc_Report.pdf`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('reports')
-      .upload(`pdfs/${filename}`, pdfBuffer, {
-        contentType: 'application/pdf',
-        upsert: true,
+    try {
+      const res = await fetch('/api/generate-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ creditText: input }),
       });
 
-    if (uploadError) {
-      throw new Error('Supabase upload failed: ' + uploadError.message);
+      const data = await res.json();
+
+      if (res.ok) {
+        let reply = '';
+        if (data.markdown) {
+          reply += `\n\nAssistant (Summary):\n${data.markdown}`;
+        }
+        setMessages(prev => [...prev, reply]);
+        setPdfUrl(data.pdfUrl);
+      } else {
+        setMessages(prev => [...prev, `❌ Error: ${data.error}`]);
+      }
+    } catch (err) {
+      setMessages(prev => [...prev, `❌ Network error.`]);
     }
 
-    const { data: publicUrlData } = supabase.storage.from('reports').getPublicUrl(uploadData.path);
+    setInput('');
+    setLoading(false);
+  };
 
-    return NextResponse.json(
-      {
-        html,
-        markdown,
-        pdfUrl: publicUrlData.publicUrl,
-        message: 'Report generation and upload successful.',
-      },
-      {
-        status: 200,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-      }
-    );
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : 'Something went wrong';
-    return NextResponse.json(
-      { error: errorMessage },
-      {
-        status: 500,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-      }
-    );
-  }
+  return (
+    <div className="max-w-3xl mx-auto px-6 py-10">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">💬 Credit Report Assistant</h2>
+        <Link href="/dashboard">
+          <Button variant="outline">← Back to Dashboard</Button>
+        </Link>
+      </div>
+
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 h-80 overflow-y-auto">
+        {messages.map((msg, idx) => (
+          <div key={idx} className="mb-3 whitespace-pre-wrap text-sm text-gray-700">{msg}</div>
+        ))}
+        {loading && <div>⏳ Processing...</div>}
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <textarea
+          rows={5}
+          className="w-full p-3 border border-gray-300 rounded-md text-sm"
+          placeholder="Paste your credit report here..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? 'Generating...' : 'Generate Summary'}
+        </Button>
+      </form>
+
+      {pdfUrl && (
+        <div className="mt-6">
+          <a
+            href={pdfUrl}
+            download
+            className="text-blue-600 hover:underline text-sm"
+          >
+            📄 Download Generated PDF
+          </a>
+        </div>
+      )}
+    </div>
+  );
 }

@@ -1,10 +1,9 @@
 import { openai } from '@/lib/openai';
-import React from 'react';
 import { supabase } from '@/lib/supabase';
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import type { CreditReportData } from '@/components/pdf/credit-report-pdf';
-import CreditReportPDF from '@/components/pdf/credit-report-pdf'; // ✅ Required import added
+import CreditReportPDF from '@/components/pdf/credit-report-pdf';
 
 type AssistantMessage = {
   content?: Array<
@@ -13,16 +12,13 @@ type AssistantMessage = {
   >;
 };
 
-// ✅ Parse markdown into structured data with HTML-safe fallbacks
 function parseMarkdownToData(markdown: string): CreditReportData {
   const extractTable = (sectionTitle: string): string[][] => {
     const section = markdown.split(sectionTitle)[1]?.split('\n\n')[0] || '';
     const lines = section.split('\n').filter((line) => line.startsWith('|'));
-
-    if (lines.length < 3) return []; // not enough for a table
-
+    if (lines.length < 3) return [];
     return lines
-      .slice(2) // skip header + divider
+      .slice(2)
       .map((line) => line.split('|').slice(1, -1).map((cell) => cell.trim()));
   };
 
@@ -35,10 +31,8 @@ function parseMarkdownToData(markdown: string): CreditReportData {
   };
 
   return {
-    fullName:
-      markdown.match(/Full Name:\s*(.*)/)?.[1]?.trim() || 'Unknown',
-    reportDate:
-      markdown.match(/Report Date:\s*(.*)/)?.[1]?.trim() || 'Unknown',
+    fullName: markdown.match(/Full Name:\s*(.*)/)?.[1]?.trim() || 'Unknown',
+    reportDate: markdown.match(/Report Date:\s*(.*)/)?.[1]?.trim() || 'Unknown',
     scores: extractTable('## Credit Scores') || [],
     summary: extractTable('## Account Summary') || [],
     revolvingAccounts: extractTable('## Open Revolving Accounts') || [],
@@ -50,35 +44,25 @@ function parseMarkdownToData(markdown: string): CreditReportData {
 }
 
 export async function OPTIONS() {
-  return NextResponse.json(
-    {},
-    {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    }
-  );
+  return NextResponse.json({}, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
 }
 
 export async function POST(req: NextRequest) {
   const { creditText } = await req.json();
 
   if (!creditText) {
-    return NextResponse.json(
-      { error: 'Missing creditText' },
-      {
-        status: 400,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-      }
-    );
+    return NextResponse.json({ error: 'Missing creditText' }, { status: 400 });
   }
 
   try {
     const thread = await openai.beta.threads.create();
-
     await openai.beta.threads.messages.create(thread.id, {
       role: 'user',
       content: `Here is a new credit report:\n\n${creditText}`,
@@ -110,22 +94,12 @@ export async function POST(req: NextRequest) {
     );
 
     const html = textBlocks.find((t) => t.includes('<html>')) || '';
-    const markdown =
-      textBlocks.find(
-        (t) =>
-          t.trim().startsWith('#') ||
-          t.includes('**Client Information') ||
-          t.includes('```')
-      ) || '';
+    const markdown = textBlocks.find(
+      (t) => t.trim().startsWith('#') || t.includes('**Client Information') || t.includes('```')
+    ) || '';
 
     if (!html || !markdown) {
-      return NextResponse.json(
-        { error: 'Expected outputs not found in assistant response' },
-        {
-          status: 500,
-          headers: { 'Access-Control-Allow-Origin': '*' },
-        }
-      );
+      return NextResponse.json({ error: 'Expected outputs not found in assistant response' }, { status: 500 });
     }
 
     const structuredData = parseMarkdownToData(markdown);
@@ -139,32 +113,13 @@ export async function POST(req: NextRequest) {
         upsert: true,
       });
 
-    if (uploadError) {
-      throw new Error('Supabase upload failed: ' + uploadError.message);
-    }
+    if (uploadError) throw new Error(uploadError.message);
 
     const { data: publicUrlData } = supabase.storage.from('reports').getPublicUrl(uploadData.path);
 
-    return NextResponse.json(
-      {
-        html,
-        markdown,
-        pdfUrl: publicUrlData.publicUrl,
-        message: 'Report generation and upload successful.',
-      },
-      {
-        status: 200,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-      }
-    );
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : 'Something went wrong';
-    return NextResponse.json(
-      { error: errorMessage },
-      {
-        status: 500,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-      }
-    );
+    return NextResponse.json({ html, markdown, pdfUrl: publicUrlData.publicUrl }, { status: 200 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Something went wrong';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
