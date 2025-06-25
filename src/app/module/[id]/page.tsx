@@ -1,3 +1,4 @@
+"use client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -12,6 +13,7 @@ import CreditRepairCTA from "@/components/credit-repair-cta"
 import CreditAuditPitch from "@/components/credit-audit-pitch"
 import CalendarEmbed from "@/components/calendar-embed"
 import CreditMonitoringPitch from "@/components/credit-monitoring-pitch"
+import { useRouter } from "next/navigation"
 
 type Lesson =
   | {
@@ -69,6 +71,7 @@ type Module = {
 }
 
 export default function ModulePage({ params }: { params: { id: string } }) {
+  const router = useRouter()
   const moduleId = Number.parseInt(params.id)
 
   const getModuleData = (id: number): Module => {
@@ -194,45 +197,51 @@ export default function ModulePage({ params }: { params: { id: string } }) {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="space-y-1">
-                  {module.lessons.map((lesson) => (
-                    <div
-                      key={lesson.id}
-                      className={`p-4 border-l-4 cursor-pointer transition-all ${
-                        lesson.current
-                          ? "border-emerald-500 bg-emerald-50"
-                          : lesson.completed
-                            ? "border-green-500 bg-green-50"
-                            : "border-transparent hover:bg-slate-50"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className={`h-8 w-8 rounded-lg flex items-center justify-center text-xs ${
-                              lesson.completed
-                                ? "bg-green-100 text-green-700"
-                                : lesson.current
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-slate-200 text-slate-600"
-                            }`}
-                          >
-                            {lesson.type === "video" && <Play className="h-4 w-4" />}
-                            {lesson.type === "pdf" && <Download className="h-4 w-4" />}
-                            {lesson.type === "checklist" && <CheckSquare className="h-4 w-4" />}
-                            {lesson.type === "embed" && <ExternalLink className="h-4 w-4" />}
-                            {lesson.type === "pitch" && <Shield className="h-4 w-4" />}
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-slate-900">{lesson.title}</h4>
-                            <p className="text-xs text-slate-600 flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {lesson.duration}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                 {module.lessons.map((lesson) => (
+  <div
+    key={lesson.id}
+    onClick={() => {
+      if (lesson.title === "Credit Report Analyzer Tool") {
+        router.push("/chat")
+      }
+    }}
+    className={`p-4 border-l-4 cursor-pointer transition-all ${
+      lesson.current
+        ? "border-emerald-500 bg-emerald-50"
+        : lesson.completed
+          ? "border-green-500 bg-green-50"
+          : "border-transparent hover:bg-slate-50"
+    }`}
+  >
+    <div className="flex items-center justify-between">
+      <div className="flex items-center space-x-3">
+        <div
+          className={`h-8 w-8 rounded-lg flex items-center justify-center text-xs ${
+            lesson.completed
+              ? "bg-green-100 text-green-700"
+              : lesson.current
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-slate-200 text-slate-600"
+          }`}
+        >
+          {lesson.type === "video" && <Play className="h-4 w-4" />}
+          {lesson.type === "pdf" && <Download className="h-4 w-4" />}
+          {lesson.type === "checklist" && <CheckSquare className="h-4 w-4" />}
+          {lesson.type === "embed" && <ExternalLink className="h-4 w-4" />}
+          {lesson.type === "pitch" && <Shield className="h-4 w-4" />}
+        </div>
+        <div>
+          <h4 className="text-sm font-medium text-slate-900">{lesson.title}</h4>
+          <p className="text-xs text-slate-600 flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {lesson.duration}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+))}
+
                 </div>
               </CardContent>
             </Card>
