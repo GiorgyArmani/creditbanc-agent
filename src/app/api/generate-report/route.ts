@@ -3,23 +3,13 @@ import { supabase } from '@/lib/supabase';
 import { NextRequest, NextResponse } from 'next/server';
 import { chromium } from 'playwright';
 
-// Types for parsing messages
-type TextBlock = {
-  type: 'text';
-  text?: { value: string };
+type AssistantMessage = {
+  content?: Array<
+    | { type: 'text'; text?: { value: string } }
+    | { type: 'code'; text: string; language?: string }
+  >;
 };
 
-type CodeBlock = {
-  type: 'code';
-  text: string;
-  language?: string;
-};
-
-type ThreadMessage = {
-  content: (TextBlock | CodeBlock)[];
-};
-
-// ✅ OPTIONS preflight
 export async function OPTIONS() {
   return NextResponse.json({}, {
     status: 200,
@@ -31,7 +21,6 @@ export async function OPTIONS() {
   });
 }
 
-// ✅ POST handler
 export async function POST(req: NextRequest) {
   const { creditText } = await req.json();
 
@@ -59,7 +48,6 @@ export async function POST(req: NextRequest) {
 
     // Step 4: Poll until complete
     let runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id });
-
     while (!['completed', 'failed', 'cancelled', 'expired'].includes(runStatus.status)) {
       await new Promise((res) => setTimeout(res, 2000));
       runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id });
@@ -71,18 +59,17 @@ export async function POST(req: NextRequest) {
 
     // Step 5: Extract messages
     const messages = await openai.beta.threads.messages.list(thread.id);
-
-    const textBlocks: string[] = messages.data.flatMap((m: any) =>
+    const textBlocks: string[] = (messages.data as AssistantMessage[]).flatMap((m) =>
       (m.content ?? [])
         .filter(
-          (c: any) =>
+          (c) =>
             (c.type === 'text' && !!c.text?.value) ||
-            (c.type === 'code' && c.language === 'html' && !!c.text)
+            (c.type === 'code' && ['html', 'markdown'].includes(c.language || '') && !!c.text)
         )
-        .map((c: any) => c.type === 'text' ? c.text.value : c.text)
+        .map((c) => (c.type === 'text' ? c.text!.value : c.text))
     );
 
-    // Step 6: Select HTML/Markdown
+    // Step 6: Extract HTML and Markdown
     const html = textBlocks.find((t) => t.includes('<html>')) || '';
     const markdown = textBlocks.find((t) =>
       t.trim().startsWith('#') ||
@@ -91,16 +78,17 @@ export async function POST(req: NextRequest) {
     ) || '';
 
     if (!html || !markdown) {
-      return NextResponse.json({ error: 'Markdown or HTML output not found' }, {
+      return NextResponse.json({ error: 'Expected outputs not found in assistant response' }, {
         status: 500,
         headers: { 'Access-Control-Allow-Origin': '*' },
       });
     }
 
-    // Step 7: Convert HTML to PDF using Playwright
-    const browser = await chromium.launch();
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'load' });
+    // Step 7: Convert HTML to PDF
+    const browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle' });
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
     await browser.close();
 
@@ -143,7 +131,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ✅ Disable body parser for streaming
 export const config = {
   api: {
     bodyParser: false,
