@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
       html,
       markdown,
       fileLink: fileLink || null,
-      downloadUrl, // 👈 for client-side anchor download
+      downloadUrl,
       message: 'Report generation completed successfully.',
     }, {
       status: 200,
@@ -110,4 +110,10 @@ export async function POST(req: NextRequest) {
     });
   }
 }
-// ✅ Export config to disable default CORS handling
+
+// ✅ Export config to disable default CORS and enable edge support
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
