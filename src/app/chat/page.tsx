@@ -1,5 +1,3 @@
-// src/app/chat/page.tsx
-
 'use client';
 
 import { useState } from 'react';
@@ -8,6 +6,7 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,10 +28,8 @@ export default function ChatPage() {
         if (data.markdown) {
           reply += `\n\nAssistant (Summary):\n${data.markdown}`;
         }
-        if (data.downloadUrl) {
-          reply += `\n\n📄 [Download HTML Report](${data.downloadUrl})`;
-        }
         setMessages(prev => [...prev, reply]);
+        setPdfUrl(data.pdfUrl || null);
       } else {
         setMessages(prev => [...prev, `❌ Error: ${data.error}`]);
       }
@@ -48,7 +45,17 @@ export default function ChatPage() {
     <div style={{ maxWidth: '700px', margin: 'auto', padding: '2rem', fontFamily: 'sans-serif' }}>
       <h2>💬 Credit Report Assistant</h2>
 
-      <div style={{ border: '1px solid #ccc', borderRadius: 8, padding: 15, height: 300, overflowY: 'auto', background: '#f9f9f9', marginBottom: 20 }}>
+      <div
+        style={{
+          border: '1px solid #ccc',
+          borderRadius: 8,
+          padding: 15,
+          height: 300,
+          overflowY: 'auto',
+          background: '#f9f9f9',
+          marginBottom: 20,
+        }}
+      >
         {messages.map((msg, idx) => (
           <div key={idx} style={{ marginBottom: '1rem', whiteSpace: 'pre-wrap' }}>{msg}</div>
         ))}
@@ -80,6 +87,32 @@ export default function ChatPage() {
           {loading ? 'Generating...' : 'Generate Summary'}
         </button>
       </form>
+
+      {pdfUrl && (
+        <div style={{ marginTop: 30 }}>
+          <a
+            href={pdfUrl}
+            download
+            style={{
+              display: 'inline-block',
+              background: '#10b981',
+              color: 'white',
+              padding: '10px 16px',
+              borderRadius: 6,
+              textDecoration: 'none',
+            }}
+          >
+            📄 Download PDF Report
+          </a>
+
+          <iframe
+            src={pdfUrl}
+            width="100%"
+            height="600px"
+            style={{ marginTop: 20, border: '1px solid #ccc' }}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -13,17 +13,20 @@ type AssistantMessage = {
   >;
 };
 
-// ✅ Parse markdown into structured data
+// ✅ Parse markdown into structured data with HTML-safe fallbacks
 function parseMarkdownToData(markdown: string): CreditReportData {
-  const extractTable = (sectionTitle: string) => {
+  const extractTable = (sectionTitle: string): string[][] => {
     const section = markdown.split(sectionTitle)[1]?.split('\n\n')[0] || '';
     const lines = section.split('\n').filter((line) => line.startsWith('|'));
+
+    if (lines.length < 3) return []; // not enough for a table
+
     return lines
-      .slice(2)
+      .slice(2) // skip header + divider
       .map((line) => line.split('|').slice(1, -1).map((cell) => cell.trim()));
   };
 
-  const extractBullets = (sectionTitle: string) => {
+  const extractBullets = (sectionTitle: string): string[] => {
     const section = markdown.split(sectionTitle)[1]?.split('\n\n')[0] || '';
     return section
       .split('\n')
@@ -32,15 +35,17 @@ function parseMarkdownToData(markdown: string): CreditReportData {
   };
 
   return {
-    fullName: markdown.match(/Full Name:\s*(.*)/)?.[1]?.trim() || 'Unknown',
-    reportDate: markdown.match(/Report Date:\s*(.*)/)?.[1]?.trim() || 'Unknown',
-    scores: extractTable('## Credit Scores'),
-    summary: extractTable('## Account Summary'),
-    revolvingAccounts: extractTable('## Open Revolving Accounts'),
-    revolvingStats: extractTable('## Summary Stats'),
-    scoreImprovementTips: extractBullets('## Estimated FICO Score Increase'),
-    alerts: extractBullets('## Flags or Alerts'),
-    installmentAccounts: extractTable('## Non-Revolving Installment Accounts'),
+    fullName:
+      markdown.match(/Full Name:\s*(.*)/)?.[1]?.trim() || 'Unknown',
+    reportDate:
+      markdown.match(/Report Date:\s*(.*)/)?.[1]?.trim() || 'Unknown',
+    scores: extractTable('## Credit Scores') || [],
+    summary: extractTable('## Account Summary') || [],
+    revolvingAccounts: extractTable('## Open Revolving Accounts') || [],
+    revolvingStats: extractTable('## Summary Stats') || [],
+    scoreImprovementTips: extractBullets('## Estimated FICO Score Increase') || [],
+    alerts: extractBullets('## Flags or Alerts') || [],
+    installmentAccounts: extractTable('## Non-Revolving Installment Accounts') || [],
   };
 }
 
