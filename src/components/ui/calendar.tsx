@@ -54,13 +54,40 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
-        IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
+        Nav: ({ onPreviousClick, onNextClick, previousMonth, nextMonth }) => (
+          <div className="space-x-1 flex items-center absolute right-1">
+            {previousMonth && (
+              <button
+                type="button"
+                onClick={onPreviousClick}
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+                )}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
+            {nextMonth && (
+              <button
+                type="button"
+                onClick={onNextClick}
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+                )}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        ),
       }}
       {...props}
     />
   )
 }
+
 Calendar.displayName = "Calendar"
 
 export { Calendar }
