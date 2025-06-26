@@ -3,14 +3,7 @@ import { openai } from '@/lib/openai';
 import { supabase } from '@/lib/supabase';
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
-import HTMLToPDF from '@/components/pdf/html-to-pdf'; // 👈 new component to render full HTML
-
-type AssistantMessage = {
-  content?: Array<
-    | { type: 'text'; text?: { value: string } }
-    | { type: 'code'; text: string; language?: string }
-  >;
-};
+import HtmlToPdf from '@/components/pdf/html-to-pdf'; // ✅ use your new component
 
 export async function OPTIONS() {
   return NextResponse.json({}, {
@@ -31,6 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Assistant run
     const thread = await openai.beta.threads.create();
     await openai.beta.threads.messages.create(thread.id, {
       role: 'user',
@@ -52,36 +46,26 @@ export async function POST(req: NextRequest) {
     }
 
     const messages = await openai.beta.threads.messages.list(thread.id);
-    const textBlocks: string[] = (messages.data as AssistantMessage[]).flatMap((m) =>
-      (m.content ?? [])
-        .filter(
-          (c) =>
-            (c.type === 'text' && !!c.text?.value) ||
-            (c.type === 'code' && ['html', 'markdown'].includes(c.language || '') && !!c.text)
-        )
-        .map((c) => (c.type === 'text' ? c.text!.value : c.text))
+    const textBlocks = messages.data.flatMap((m: any) =>
+      (m.content ?? []).filter(
+        (c: any) =>
+          (c.type === 'text' && !!c.text?.value) ||
+          (c.type === 'code' && ['html', 'markdown'].includes(c.language || '') && !!c.text)
+      ).map((c: any) => c.type === 'text' ? c.text.value : c.text)
     );
 
-    const html = textBlocks.find(t =>
-      t.includes('<html>') ||
-      t.includes('<table') ||
-      t.includes('<p') ||
-      t.includes('<img')
-    ) || '';
+    const html = textBlocks.find((t: string) =>
+      t.includes('<html>') || t.includes('<table') || t.includes('<p') || t.includes('<img')) || '';
 
-    const markdown = textBlocks.find(t =>
-      t.trim().startsWith('#') ||
-      t.includes('**Client Information') ||
-      t.includes('```') ||
-      t.includes('| Bureau |')
-    ) || '';
+    const markdown = textBlocks.find((t: string) =>
+      t.trim().startsWith('#') || t.includes('**Client Information') || t.includes('| Bureau |')) || '';
 
     if (!html || !markdown) {
       return NextResponse.json({ error: 'Expected outputs not found in assistant response' }, { status: 500 });
     }
 
-    // ⬇️ Render PDF from full HTML using the new component
-    const pdfBuffer = await renderToBuffer(<HTMLToPDF html={html} />);
+    // ✅ Render PDF from raw HTML string using HtmlToPdf
+    const pdfBuffer = await renderToBuffer(<HtmlToPdf html={html} />);
 
     const filename = `${Date.now()}_CreditBanc_Report.pdf`;
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -95,7 +79,12 @@ export async function POST(req: NextRequest) {
 
     const { data: publicUrlData } = supabase.storage.from('reports').getPublicUrl(uploadData.path);
 
-    return NextResponse.json({ html, markdown, pdfUrl: publicUrlData.publicUrl }, { status: 200 });
+    return NextResponse.json({
+      html,
+      markdown,
+      pdfUrl: publicUrlData.publicUrl,
+      message: 'Report generation and upload successful.',
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Something went wrong';
     return NextResponse.json({ error: message }, { status: 500 });
