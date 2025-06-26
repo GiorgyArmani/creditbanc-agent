@@ -166,6 +166,6 @@ const HtmlToPDF = ({ html }: { html: string }) => {
       </Page>
     </Document>
   );
-};
+}; 
 
 export default HtmlToPDF;
