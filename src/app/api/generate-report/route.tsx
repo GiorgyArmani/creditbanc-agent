@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     );
 
     const html = textBlocks.find((t: string) =>
-      t.includes('<html>') || t.includes('<table') || t.includes('<p') || t.includes('<img')) || '';
+  t.includes('<img') || t.includes('<table') || t.includes('<strong>')) || '';
 
     const markdown = textBlocks.find((t: string) =>
       t.trim().startsWith('#') || t.includes('**Client Information') || t.includes('| Bureau |')) || '';
