@@ -1,9 +1,9 @@
+
 import { openai } from '@/lib/openai';
 import { supabase } from '@/lib/supabase';
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
-import type { CreditReportData } from '@/components/pdf/credit-report-pdf';
-import CreditReportPDF from '@/components/pdf/credit-report-pdf';
+import HTMLToPDF from '@/components/pdf/html-to-pdf'; // 👈 new component to render full HTML
 
 type AssistantMessage = {
   content?: Array<
@@ -11,40 +11,6 @@ type AssistantMessage = {
     | { type: 'code'; text: string; language?: string }
   >;
 };
-
-function parseMarkdownToData(markdown: string): CreditReportData {
-  const extractTable = (sectionTitle: string): string[][] => {
-    const section = markdown.split(sectionTitle)[1]?.split('\n\n')[0] || '';
-    const lines = section.split('\n').filter((line) => line.trim().startsWith('|'));
-
-    if (lines.length < 3) return []; // not enough rows for a table
-
-    return lines
-      .slice(2) // skip table header and separator
-      .map(line => line.split('|').slice(1, -1).map(cell => cell.trim()));
-  };
-
-  const extractBullets = (sectionTitle: string): string[] => {
-    const section = markdown.split(sectionTitle)[1]?.split('\n\n')[0] || '';
-    return section
-      .split('\n')
-      .filter(line => line.trim().startsWith('- '))
-      .map(line => line.replace('- ', '').trim());
-  };
-
-  return {
-    fullName: markdown.match(/Full Name:\s*(.*)/)?.[1]?.trim() || 'Unknown',
-    reportDate: markdown.match(/Report Date:\s*(.*)/)?.[1]?.trim() || 'Unknown',
-    scores: extractTable('## Credit Scores') || [],
-    summary: extractTable('## Account Summary') || [],
-    revolvingAccounts: extractTable('## Open Revolving Accounts') || [],
-    revolvingStats: extractTable('## Summary Stats') || [],
-    scoreImprovementTips: extractBullets('## Estimated FICO Score Increase') || [],
-    alerts: extractBullets('## Flags or Alerts') || [],
-    installmentAccounts: extractTable('## Non-Revolving Installment Accounts') || [],
-  };
-}
-
 
 export async function OPTIONS() {
   return NextResponse.json({}, {
@@ -96,31 +62,26 @@ export async function POST(req: NextRequest) {
         .map((c) => (c.type === 'text' ? c.text!.value : c.text))
     );
 
-   const html =
-  textBlocks.find(
-    (t) =>
+    const html = textBlocks.find(t =>
       t.includes('<html>') ||
       t.includes('<table') ||
       t.includes('<p') ||
       t.includes('<img')
-  ) || '';
+    ) || '';
 
-const markdown =
-  textBlocks.find(
-    (t) =>
+    const markdown = textBlocks.find(t =>
       t.trim().startsWith('#') ||
       t.includes('**Client Information') ||
       t.includes('```') ||
       t.includes('| Bureau |')
-  ) || '';
-
+    ) || '';
 
     if (!html || !markdown) {
       return NextResponse.json({ error: 'Expected outputs not found in assistant response' }, { status: 500 });
     }
 
-    const structuredData = parseMarkdownToData(markdown);
-    const pdfBuffer = await renderToBuffer(<CreditReportPDF data={structuredData} />);
+    // ⬇️ Render PDF from full HTML using the new component
+    const pdfBuffer = await renderToBuffer(<HTMLToPDF html={html} />);
 
     const filename = `${Date.now()}_CreditBanc_Report.pdf`;
     const { data: uploadData, error: uploadError } = await supabase.storage
