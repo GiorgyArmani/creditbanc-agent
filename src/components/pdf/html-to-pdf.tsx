@@ -1,170 +1,121 @@
-
 import React from 'react';
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-  Font,
-} from '@react-pdf/renderer';
-import parse, { domToReact } from 'html-react-parser';
-import type { DOMNode, Element } from 'html-react-parser';
-
-// Register Helvetica
-Font.register({
-  family: 'Helvetica',
-  fonts: [
-    {
-      src: 'https://fonts.gstatic.com/s/helvetica/v15/oxz38sXWvvGgHkZ0QCfOXJw.woff2',
-    },
-  ],
-});
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { parseDocument } from 'htmlparser2';
 
 const styles = StyleSheet.create({
   page: {
-    fontFamily: 'Helvetica',
+    padding: 20,
     fontSize: 12,
-    padding: 30,
-    lineHeight: 1.5,
+    fontFamily: 'Helvetica'
   },
-  section: { marginBottom: 12 },
-  heading: { fontSize: 14, fontWeight: 'bold', marginBottom: 6 },
-  paragraph: { marginBottom: 4 },
-  listItem: { marginLeft: 10, marginBottom: 2 },
+  section: {
+    marginBottom: 10
+  },
+  heading: {
+    fontWeight: 'bold',
+    marginBottom: 5
+  },
+  paragraph: {
+    marginBottom: 5
+  },
   table: {
-    display: 'flex',
     width: 'auto',
-    borderStyle: 'solid',
-    borderWidth: 1,
-    borderRightWidth: 0,
-    borderBottomWidth: 0,
-    marginBottom: 10,
+    marginBottom: 10
   },
   tableRow: {
-    flexDirection: 'row',
+    flexDirection: 'row'
   },
   tableCell: {
-    borderStyle: 'solid',
-    borderWidth: 1,
-    borderLeftWidth: 0,
-    borderTopWidth: 0,
     padding: 4,
-    flexGrow: 1,
-  },
-  tableHeaderCell: {
-    fontWeight: 'bold',
-    backgroundColor: '#eee',
-  },
+    borderWidth: 1,
+    borderColor: '#000',
+    flex: 1
+  }
 });
 
-function renderNode(node: any, index: number): React.ReactNode {
-  if (node.type === 'text') {
-    return <Text key={index}>{node.data}</Text>;
-  }
-
-  if (node.type === 'tag') {
-    const el = node as Element;
-    const children = el.children?.filter(
-      (child) => child.type === 'tag' || child.type === 'text'
-    ) as any[];
-
-    const childContent = domToReact(children);
-
-    switch (el.name) {
-      case 'h2':
-        return (
-          <View key={index} style={styles.section}>
-            <Text style={styles.heading}>{childContent}</Text>
-          </View>
-        );
-      case 'p':
-        return (
-          <Text key={index} style={styles.paragraph}>
-            {childContent}
-          </Text>
-        );
-      case 'ul':
-        return (
-          <View key={index} style={styles.section}>
-            {el.children
-              .filter((li) => (li as Element).name === 'li')
-              .map((li, i) => (
-                <Text key={i} style={styles.listItem}>
-                  •{' '}
-                  {domToReact(
-                    ((li as Element).children || []).filter(
-                      (child) => child.type === 'tag' || child.type === 'text'
-                    ) as any[]
-                  )}
-                </Text>
-              ))}
-          </View>
-        );
-      case 'table':
-        const rows = el.children.filter((child) => (child as Element).name === 'tr');
-        return (
-          <View key={index} style={styles.table}>
-            {rows.map((row, rIdx) => {
-              const cells = (row as Element).children.filter(
-                (cell) =>
-                  (cell as Element).name === 'td' ||
-                  (cell as Element).name === 'th'
-              );
-              return (
-                <View key={rIdx} style={styles.tableRow}>
-                  {cells.map((cell, cIdx) => {
-                    const isHeader = (cell as Element).name === 'th';
-                    const cellStyles = [
-                      styles.tableCell,
-                      ...(isHeader ? [styles.tableHeaderCell] : []),
-                    ];
-                    return (
-                      <Text key={cIdx} style={cellStyles}>
-                        {domToReact(
-                          ((cell as Element).children || []).filter(
-                            (child) =>
-                              child.type === 'tag' || child.type === 'text'
-                          ) as any[]
-                        )}
-                      </Text>
-                    );
-                  })}
-                </View>
-              );
-            })}
-          </View>
-        );
-      default:
-        return (
-          <Text key={index} style={styles.paragraph}>
-            {childContent}
-          </Text>
-        );
-    }
-  }
-
-  return null;
+function getText(node: any): string {
+  if (!node) return '';
+  if (node.type === 'text') return node.data;
+  if (node.children) return node.children.map(getText).join('');
+  return '';
 }
 
-const HtmlToPDF = ({ html }: { html: string }) => {
-  const parsed = parse(html);
+function renderNode(node: any, key: number): React.ReactElement | null {
+  if (!node) return null;
 
-  const nodes = Array.isArray(parsed) ? parsed : [parsed];
+  switch (node.type) {
+    case 'text':
+      return <Text key={key}>{node.data}</Text>;
+
+    case 'tag':
+      switch (node.name) {
+        case 'p':
+          return (
+            <Text key={key} style={styles.paragraph}>
+              {node.children?.map((child: any, idx: number) => renderNode(child, idx))}
+            </Text>
+          );
+        case 'strong':
+        case 'b':
+          return (
+            <Text key={key} style={{ fontWeight: 'bold' }}>
+              {node.children?.map((child: any, idx: number) => renderNode(child, idx))}
+            </Text>
+          );
+        case 'br':
+          return <Text key={key}>{'\n'}</Text>;
+        case 'ul':
+          return (
+            <View key={key} style={styles.section}>
+              {node.children?.map((li: any, idx: number) => (
+                <Text key={idx}>• {getText(li)}</Text>
+              ))}
+            </View>
+          );
+        case 'table':
+          return (
+            <View key={key} style={styles.table}>
+              {node.children
+                .filter((n: any) => n.name === 'tr')
+                .map((row: any, rowIdx: number) => (
+                  <View key={rowIdx} style={styles.tableRow}>
+                    {row.children
+                      .filter((n: any) => n.name === 'td' || n.name === 'th')
+                      .map((cell: any, cellIdx: number) => (
+                        <Text key={cellIdx} style={styles.tableCell}>
+                          {getText(cell)}
+                        </Text>
+                      ))}
+                  </View>
+                ))}
+            </View>
+          );
+        case 'img':
+          return null;
+        default:
+          return (
+            <View key={key}>
+              {node.children?.map((child: any, idx: number) => renderNode(child, idx))}
+            </View>
+          );
+      }
+
+    default:
+      return null;
+  }
+}
+const HtmlToPDF = ({ html }: { html: string }) => {
+  const parsed = parseDocument(html).children;
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {nodes.map((node: any, index: number) =>
-          typeof node === 'string' ? (
-            <Text key={index}>{node}</Text>
-          ) : (
-            renderNode(node, index)
-          )
-        )}
+        {parsed.map((node, index) => (
+          <View key={index}>{renderNode(node, index)}</View>
+        ))}
       </Page>
     </Document>
   );
-}; 
+};
 
 export default HtmlToPDF;
