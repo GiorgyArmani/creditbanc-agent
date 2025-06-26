@@ -2,17 +2,20 @@ import { openai } from '@/lib/openai';
 import { supabase } from '@/lib/supabase';
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
-import HtmlToPdf from '@/components/pdf/html-to-pdf';
+import HtmlToPDF from '@/components/pdf/html-to-pdf'; // ensure this is a default export
 
 export async function OPTIONS() {
-  return NextResponse.json({}, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
+  return NextResponse.json(
+    {},
+    {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+    }
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -23,7 +26,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Assistant run
+    // 1. Create and send to Assistant
     const thread = await openai.beta.threads.create();
     await openai.beta.threads.messages.create(thread.id, {
       role: 'user',
@@ -31,9 +34,10 @@ export async function POST(req: NextRequest) {
     });
 
     const run = await openai.beta.threads.runs.create(thread.id, {
-      assistant_id: 'asst_M0u0phtt14WrV0FYOHB3yDqF',
+      assistant_id: 'asst_M0u0phtt14WrV0FYOHB3yDqF', // use your assistant ID
     });
 
+    // 2. Wait for completion
     let runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id });
     while (!['completed', 'failed', 'cancelled', 'expired'].includes(runStatus.status)) {
       await new Promise((res) => setTimeout(res, 2000));
@@ -44,31 +48,37 @@ export async function POST(req: NextRequest) {
       throw new Error(`Run failed with status: ${runStatus.status}`);
     }
 
+    // 3. Get response content
     const messages = await openai.beta.threads.messages.list(thread.id);
+    const fullText = messages.data
+      .flatMap((m: any) =>
+        (m.content ?? []).map((c: any) =>
+          c.type === 'text' && c.text?.value ? c.text.value : ''
+        )
+      )
+      .join('\n');
 
-    const textBlocks = messages.data.flatMap((m: any) =>
-      (m.content ?? []).filter(
-        (c: any) =>
-          (c.type === 'text' && !!c.text?.value) ||
-          (c.type === 'code' && ['html', 'markdown'].includes(c.language || '') && !!c.text)
-      ).map((c: any) => c.type === 'text' ? c.text.value : c.text)
-    );
+    // 4. Extract HTML and Markdown code blocks
+    const extractCodeBlock = (text: string, language: string): string => {
+      const regex = new RegExp(`\`\`\`${language}\\s*([\\s\\S]*?)\`\`\``, 'i');
+      const match = text.match(regex);
+      return match?.[1]?.trim() || '';
+    };
 
-    // ✅ More robust HTML and Markdown detection
-    const html = textBlocks.find((t: string) =>
-      t.includes('<img') || t.includes('<table') || t.includes('<strong>')) || '';
-
-    const markdown = textBlocks.find((t: string) =>
-      t.trim().startsWith('#') || t.includes('## Client Information') || t.includes('| Bureau |')) || '';
+    const html = extractCodeBlock(fullText, 'html');
+    const markdown = extractCodeBlock(fullText, 'markdown');
 
     if (!html || !markdown) {
-      console.error('Raw assistant response blocks:', textBlocks);
-      return NextResponse.json({ error: 'Expected outputs not found in assistant response' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Expected outputs not found in assistant response' },
+        { status: 500 }
+      );
     }
 
-    // ✅ Render PDF from HTML string
-    const pdfBuffer = await renderToBuffer(<HtmlToPdf html={html} />);
+    // 5. Generate PDF from HTML
+    const pdfBuffer = await renderToBuffer(<HtmlToPDF html={html} />);
 
+    // 6. Upload to Supabase
     const filename = `${Date.now()}_CreditBanc_Report.pdf`;
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('reports')
@@ -79,17 +89,18 @@ export async function POST(req: NextRequest) {
 
     if (uploadError) throw new Error(uploadError.message);
 
-    const { data: publicUrlData } = supabase.storage.from('reports').getPublicUrl(uploadData.path);
+    const { data: publicUrlData } = supabase.storage
+      .from('reports')
+      .getPublicUrl(uploadData.path);
 
     return NextResponse.json({
-      html,
       markdown,
+      html,
       pdfUrl: publicUrlData.publicUrl,
-      message: 'Report generation and upload successful.',
+      message: 'Report generated and uploaded successfully.',
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Something went wrong';
-    console.error('[ERROR]:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
