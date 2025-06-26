@@ -1,9 +1,8 @@
-
 import { openai } from '@/lib/openai';
 import { supabase } from '@/lib/supabase';
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
-import HtmlToPdf from '@/components/pdf/html-to-pdf'; // ✅ use your new component
+import HtmlToPdf from '@/components/pdf/html-to-pdf';
 
 export async function OPTIONS() {
   return NextResponse.json({}, {
@@ -46,6 +45,7 @@ export async function POST(req: NextRequest) {
     }
 
     const messages = await openai.beta.threads.messages.list(thread.id);
+
     const textBlocks = messages.data.flatMap((m: any) =>
       (m.content ?? []).filter(
         (c: any) =>
@@ -54,17 +54,19 @@ export async function POST(req: NextRequest) {
       ).map((c: any) => c.type === 'text' ? c.text.value : c.text)
     );
 
+    // ✅ More robust HTML and Markdown detection
     const html = textBlocks.find((t: string) =>
-  t.includes('<img') || t.includes('<table') || t.includes('<strong>')) || '';
+      t.includes('<img') || t.includes('<table') || t.includes('<strong>')) || '';
 
     const markdown = textBlocks.find((t: string) =>
-      t.trim().startsWith('#') || t.includes('**Client Information') || t.includes('| Bureau |')) || '';
+      t.trim().startsWith('#') || t.includes('## Client Information') || t.includes('| Bureau |')) || '';
 
     if (!html || !markdown) {
+      console.error('Raw assistant response blocks:', textBlocks);
       return NextResponse.json({ error: 'Expected outputs not found in assistant response' }, { status: 500 });
     }
 
-    // ✅ Render PDF from raw HTML string using HtmlToPdf
+    // ✅ Render PDF from HTML string
     const pdfBuffer = await renderToBuffer(<HtmlToPdf html={html} />);
 
     const filename = `${Date.now()}_CreditBanc_Report.pdf`;
@@ -87,6 +89,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Something went wrong';
+    console.error('[ERROR]:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
