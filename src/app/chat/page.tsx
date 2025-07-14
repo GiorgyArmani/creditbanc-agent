@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { FileDown } from "lucide-react";
 import Link from 'next/link';
 
 export default function ChatPage() {
@@ -48,7 +49,7 @@ export default function ChatPage() {
     <div className="max-w-3xl mx-auto px-6 py-10">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">💬 Credit Report Assistant</h2>
-        <Link href="/">
+        <Link href="/dashboard">
           <Button variant="outline">← Back to Dashboard</Button>
         </Link>
       </div>
@@ -74,16 +75,24 @@ export default function ChatPage() {
       </form>
 
       {pdfUrl && (
-        <div className="mt-6">
-          <a
-            href={pdfUrl}
-            download
-            className="text-blue-600 hover:underline text-sm"
-          >
-            📄 Download Generated PDF
-          </a>
-        </div>
-      )}
+  <div className="mt-6 flex justify-center">
+    <Button
+      asChild
+      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2"
+    >
+      <a
+        href={pdfUrl}
+        download // fuerza descarga si el navegador lo soporta
+        target="_blank" // lo abre en otra pestaña si el navegador lo permite
+        rel="noopener noreferrer"
+        className="flex items-center gap-2"
+      >
+        <FileDown className="h-5 w-5" />
+        Download Credit Report!
+      </a>
+    </Button>
+  </div>
+)}
     </div>
   );
 }
