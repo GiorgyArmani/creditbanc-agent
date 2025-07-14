@@ -2,7 +2,10 @@ import { openai } from '@/lib/openai';
 import { supabase } from '@/lib/supabase';
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
-import HtmlToPDF from '@/components/pdf/html-to-pdf'; // ensure this is a default export
+import { generatePDFBuffer } from '@/lib/pdf/pdf-buffer';
+
+
+
 
 export async function OPTIONS() {
   return NextResponse.json(
@@ -74,9 +77,10 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-
     // 5. Generate PDF from HTML
-    const pdfBuffer = await renderToBuffer(<HtmlToPDF html={html} />);
+   const pdfBuffer = await generatePDFBuffer(html); 
+
+    
 
     // 6. Upload to Supabase
     const filename = `${Date.now()}_CreditBanc_Report.pdf`;
