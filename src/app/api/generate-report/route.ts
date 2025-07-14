@@ -1,7 +1,6 @@
 import { openai } from '@/lib/openai';
 import { supabase } from '@/lib/supabase';
 import { NextRequest, NextResponse } from 'next/server';
-import { renderToBuffer } from '@react-pdf/renderer';
 import { generatePDFBuffer } from '@/lib/pdf/pdf-buffer';
 
 
