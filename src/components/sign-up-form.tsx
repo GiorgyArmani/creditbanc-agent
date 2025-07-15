@@ -43,7 +43,7 @@ export function SignUpForm({
     }
 
     try {
-      // Step 1: Sign up in Supabase Auth
+      // Step 1: Create Auth user
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -55,16 +55,13 @@ export function SignUpForm({
 
       if (signUpError || !signUpData?.user) throw signUpError || new Error('Signup failed')
 
-      // Step 2: Insert into custom 'users' table
-      const { error: insertError } = await supabase.from('users').insert({
-        id: signUpData.user.id,
-        email,
+      // Step 2: Insert into public.users via RPC function
+      const { error: rpcError } = await supabase.rpc('insert_user_profile', {
         full_name: fullName,
-        created_at: new Date().toISOString(),
-        role: 'user',
+        email: email,
       })
 
-      if (insertError) throw insertError
+      if (rpcError) throw rpcError
 
       // Step 3: Redirect
       router.push('/dashboard')
