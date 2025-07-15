@@ -55,7 +55,7 @@ export default function BookConsultation() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
         <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm">
           <div className="container mx-auto px-4 py-4">
-            <Link href="/">
+            <Link href="/dashboard">
               <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Dashboard
@@ -74,7 +74,7 @@ export default function BookConsultation() {
               Thank you for booking a consultation. Our financial advisor will contact you within 24 hours to schedule
               your personalized credit analysis session.
             </p>
-            <Link href="/">
+            <Link href="/dashboard">
               <Button className="bg-emerald-600 hover:bg-emerald-700">Return to Dashboard</Button>
             </Link>
           </div>
@@ -89,7 +89,7 @@ export default function BookConsultation() {
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/">
+            <Link href="/dashboard">
               <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Dashboard

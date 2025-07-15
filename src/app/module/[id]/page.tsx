@@ -168,7 +168,7 @@ export default function ModulePage({ params }: { params: { id: string } }) {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/">
+              <Link href="/dashboard">
                 <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Dashboard
@@ -202,7 +202,7 @@ export default function ModulePage({ params }: { params: { id: string } }) {
     key={lesson.id}
     onClick={() => {
       if (lesson.title === "Credit Report Analyzer Tool") {
-        router.push("/chat")
+        router.push("/credit-report-assistant");
       }
     }}
     className={`p-4 border-l-4 cursor-pointer transition-all ${

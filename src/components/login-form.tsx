@@ -16,7 +16,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function LoginForm({
+export default function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
@@ -85,6 +85,7 @@ export function LoginForm({
                   type="password"
                   required
                   value={password}
+                  name="password"
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>

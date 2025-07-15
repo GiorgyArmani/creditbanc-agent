@@ -86,7 +86,7 @@ export default function CourseDashboard() {
       <div className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-slate-900 mb-2">Welcome back, Alex</h2>
+          <h2 className="text-3xl font-bold text-slate-900 mb-2">Welcome back,</h2>
           <p className="text-slate-600">Master your credit and take control of your financial future</p>
         </div>
 
@@ -204,19 +204,19 @@ export default function CourseDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Link href="/resources">
+              <Link href="/chat">
                 <Button variant="outline" className="w-full h-16 border-slate-300 text-slate-700 hover:bg-slate-100">
                   <div className="flex flex-col items-center gap-2">
                     <Download className="h-5 w-5" />
-                    <span>Download Resources</span>
+                    <span>AI Business Coach</span>
                   </div>
                 </Button>
               </Link>
-              <Link href="/checklist">
+              <Link href="/assessment">
                 <Button variant="outline" className="w-full h-16 border-slate-300 text-slate-700 hover:bg-slate-100">
                   <div className="flex flex-col items-center gap-2">
                     <CheckSquare className="h-5 w-5" />
-                    <span>Action Checklists</span>
+                    <span>Action assessments</span>
                   </div>
                 </Button>
               </Link>
