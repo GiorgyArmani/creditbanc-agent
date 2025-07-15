@@ -7,15 +7,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Save, User, Target, DollarSign, Settings } from 'lucide-react'
 
 const DEFAULT_PROFILE: BusinessProfile = {
-  completionLevel: 0,
-  lastUpdated: new Date(),
-  completedCategories: [],
+  business_description: '',
+  business_model: '',
+  ideal_customer: '',
+  primary_goal: '',
+  main_challenge: '',
+  monthly_revenue: '',
+  average_ticket_size: '',
+  client_acquisition: '',
+  marketing_working: '',
+  marketing_not_working: '',
 }
 
 export function BusinessProfileBuilder({ initialProfile, onSave, onClose }: BusinessProfileBuilderProps) {
@@ -32,30 +38,32 @@ export function BusinessProfileBuilder({ initialProfile, onSave, onClose }: Busi
     setProfile((prev) => ({ ...prev, [key]: value }))
   }
 
-  const calculateCompletionLevel = () => {
-    const fields = [
-      'businessDescription',
-      'primaryGoal',
-      'mainChallenge',
-      'idealCustomer',
-      'businessModel',
-      'monthlyRevenue',
-      'clientAcquisition',
-      'marketingWorking',
-    ]
-    const completed = fields.filter((field) => {
-      const value = profile[field as keyof BusinessProfile]
-      return value !== undefined && value !== null && value !== ''
-    }).length
-    return fields.length > 0 ? Math.round((completed / fields.length) * 100) : 0
-  }
+ const calculateCompletionLevel = () => {
+  const fields: (keyof BusinessProfile)[] = [
+    'business_description',
+    'primary_goal',
+    'main_challenge',
+    'ideal_customer',
+    'business_model',
+    'monthly_revenue',
+    'average_ticket_size',
+    'client_acquisition',
+    'marketing_working',
+    'marketing_not_working',
+  ]
+  const completed = fields.filter((field) => {
+    const value = profile[field]
+    return typeof value === 'string' ? value.trim() !== '' : value !== null && value !== undefined
+  }).length
+  return Math.round((completed / fields.length) * 100)
+}
+
 
   const handleSave = () => {
     const updatedProfile = {
       ...profile,
-      completionLevel: calculateCompletionLevel(),
-      lastUpdated: new Date(),
-      completedCategories: profile.completedCategories || ['basic', 'goals', 'financial', 'operations'],
+      completion_level: calculateCompletionLevel(),
+      last_updated: new Date().toISOString(),
     }
     onSave(updatedProfile)
   }
@@ -105,77 +113,77 @@ export function BusinessProfileBuilder({ initialProfile, onSave, onClose }: Busi
             <TabsTrigger value="operations"><Settings className="h-4 w-4" /> Ops</TabsTrigger>
           </TabsList>
 
+          {/* Basic Info */}
           <TabsContent value="basic" className="mt-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Basic Info</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Basic Info</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="businessDescription">Description</Label>
-                  <Textarea id="businessDescription" value={profile.businessDescription || ''} onChange={(e) => updateProfile('businessDescription', e.target.value)} />
+                  <Label htmlFor="business_description">Description</Label>
+                  <Textarea id="business_description" value={profile.business_description} onChange={(e) => updateProfile('business_description', e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="businessModel">Business Model</Label>
-                  <Input id="businessModel" value={profile.businessModel || ''} onChange={(e) => updateProfile('businessModel', e.target.value)} />
+                  <Label htmlFor="business_model">Business Model</Label>
+                  <Input id="business_model" value={profile.business_model} onChange={(e) => updateProfile('business_model', e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="idealCustomer">Ideal Customer</Label>
-                  <Input id="idealCustomer" value={profile.idealCustomer || ''} onChange={(e) => updateProfile('idealCustomer', e.target.value)} />
+                  <Label htmlFor="ideal_customer">Ideal Customer</Label>
+                  <Input id="ideal_customer" value={profile.ideal_customer} onChange={(e) => updateProfile('ideal_customer', e.target.value)} />
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* Goals */}
           <TabsContent value="goals" className="mt-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Goals & Challenges</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Goals & Challenges</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="primaryGoal">Primary Goal</Label>
-                  <Input id="primaryGoal" value={profile.primaryGoal || ''} onChange={(e) => updateProfile('primaryGoal', e.target.value)} />
+                  <Label htmlFor="primary_goal">Primary Goal</Label>
+                  <Input id="primary_goal" value={profile.primary_goal} onChange={(e) => updateProfile('primary_goal', e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="mainChallenge">Main Challenge</Label>
-                  <Textarea id="mainChallenge" value={profile.mainChallenge || ''} onChange={(e) => updateProfile('mainChallenge', e.target.value)} />
+                  <Label htmlFor="main_challenge">Main Challenge</Label>
+                  <Textarea id="main_challenge" value={profile.main_challenge} onChange={(e) => updateProfile('main_challenge', e.target.value)} />
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* Financial */}
           <TabsContent value="financial" className="mt-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Financial Info</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Financial Info</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="monthlyRevenue">Monthly Revenue</Label>
-                  <Input id="monthlyRevenue" value={profile.monthlyRevenue || ''} onChange={(e) => updateProfile('monthlyRevenue', e.target.value)} />
+                  <Label htmlFor="monthly_revenue">Monthly Revenue</Label>
+                  <Input id="monthly_revenue" value={profile.monthly_revenue} onChange={(e) => updateProfile('monthly_revenue', e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="averageTicketSize">Avg Ticket Size</Label>
-                  <Input id="averageTicketSize" value={profile.averageTicketSize || ''} onChange={(e) => updateProfile('averageTicketSize', e.target.value)} />
+                  <Label htmlFor="average_ticket_size">Avg Ticket Size</Label>
+                  <Input id="average_ticket_size" value={profile.average_ticket_size} onChange={(e) => updateProfile('average_ticket_size', e.target.value)} />
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* Operations */}
           <TabsContent value="operations" className="mt-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Operations</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Operations</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="clientAcquisition">Client Acquisition</Label>
-                  <Textarea id="clientAcquisition" value={profile.clientAcquisition || ''} onChange={(e) => updateProfile('clientAcquisition', e.target.value)} />
+                  <Label htmlFor="client_acquisition">Client Acquisition</Label>
+                  <Textarea id="client_acquisition" value={profile.client_acquisition} onChange={(e) => updateProfile('client_acquisition', e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="marketingWorking">Marketing Working</Label>
-                  <Textarea id="marketingWorking" value={profile.marketingWorking || ''} onChange={(e) => updateProfile('marketingWorking', e.target.value)} />
+                  <Label htmlFor="marketing_working">Marketing Working</Label>
+                  <Textarea id="marketing_working" value={profile.marketing_working} onChange={(e) => updateProfile('marketing_working', e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="marketing_not_working">Marketing Not Working</Label>
+                  <Textarea id="marketing_not_working" value={profile.marketing_not_working} onChange={(e) => updateProfile('marketing_not_working', e.target.value)} />
                 </div>
               </CardContent>
             </Card>

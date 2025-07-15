@@ -39,7 +39,9 @@ export function ChatMessageDisplay({ message, onAction }: ChatMessageDisplayProp
           </div>
         </div>
         <div className={!isExpanded ? "line-clamp-3" : ""}>
-          <ReactMarkdown className="prose prose-sm max-w-none">{message.content}</ReactMarkdown>
+          <div className="prose prose-sm max-w-none">
+            <ReactMarkdown>{message.content}</ReactMarkdown>
+          </div>
         </div>
         {message.content.length > 300 && (
           <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)} className="text-xs">

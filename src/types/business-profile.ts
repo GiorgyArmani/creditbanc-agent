@@ -1,28 +1,20 @@
 export interface BusinessProfile {
+  id?: string
   user_id?: string
-  businessDescription?: string
-  primaryGoal?: string
-  mainChallenge?: string
-  idealCustomer?: string
-  businessModel?: string
-  monthlyRevenue?: string
-  profitMargin?: string
-  averageTicketSize?: string
-  personalTasks?: string
-  teamStructure?: string
-  automationNeeds?: string
-  clientAcquisition?: string
-  marketingWorking?: string
-  marketingNotWorking?: string
-  marketingMix?: string
-  toolsUsed?: string
-  dataAccess?: string
-  repetitiveTasks?: string
-  dataNeeds?: string
-  aiOpenness?: string
-  completionLevel: number
-  lastUpdated: Date
-  completedCategories: string[]
+  business_name?: string
+  business_description?: string
+  business_model?: string
+  ideal_customer?: string
+  primary_goal?: string
+  main_challenge?: string
+  monthly_revenue?: string
+  average_ticket_size?: string
+  client_acquisition?: string
+  marketing_working?: string
+  marketing_not_working?: string
+  completion_level?: number
+  created_at?: string
+  updated_at?: string
 }
 
 export interface BusinessProfileBuilderProps {

@@ -1,5 +1,7 @@
-"use client"
+'use client'
 
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { LogoutButton } from "@/components/logout-button"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,12 +11,26 @@ import { Play, Download, CheckSquare, Clock, Users, TrendingUp, Calendar } from 
 import Link from "next/link"
 import CreditScoreWidget from "@/components/credit-score-widget"
 import CreditGoalsWidget from "@/components/credit-goals-widget"
-import { useState } from "react"
 
 export default function CourseDashboard() {
   const [creditScore, setCreditScore] = useState(720)
   const [targetScore, setTargetScore] = useState(750)
+  const [userName, setUserName] = useState<string | null>(null)
   const courseProgress = 15
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const nameFromMetadata = user.user_metadata?.full_name || user.user_metadata?.name
+        const fallback = user.email?.split('@')[0]
+        setUserName(nameFromMetadata ?? fallback ?? 'User')
+      }
+    }
+
+    fetchUser()
+  }, [])
 
   const modules = [
     {
@@ -77,7 +93,7 @@ export default function CourseDashboard() {
                 Premium Member
               </Badge>
               <div className="h-8 w-8 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
-               <LogoutButton />
+              <LogoutButton />
             </div>
           </div>
         </div>
@@ -86,7 +102,9 @@ export default function CourseDashboard() {
       <div className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-slate-900 mb-2">Welcome back,</h2>
+          <h2 className="text-3xl font-bold text-slate-900 mb-2">
+            Welcome back{userName ? `, ${userName}` : ''}!
+          </h2>
           <p className="text-slate-600">Master your credit and take control of your financial future</p>
         </div>
 
@@ -204,7 +222,7 @@ export default function CourseDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Link href="/chat">
+              <Link href="/dashboard/chat">
                 <Button variant="outline" className="w-full h-16 border-slate-300 text-slate-700 hover:bg-slate-100">
                   <div className="flex flex-col items-center gap-2">
                     <Download className="h-5 w-5" />
@@ -212,7 +230,7 @@ export default function CourseDashboard() {
                   </div>
                 </Button>
               </Link>
-              <Link href="/assessment">
+              <Link href="/dashboard/assessment">
                 <Button variant="outline" className="w-full h-16 border-slate-300 text-slate-700 hover:bg-slate-100">
                   <div className="flex flex-col items-center gap-2">
                     <CheckSquare className="h-5 w-5" />
@@ -220,7 +238,7 @@ export default function CourseDashboard() {
                   </div>
                 </Button>
               </Link>
-              <Link href="/book-consultation">
+              <Link href="/dashboard/book-consultation">
                 <Button className="w-full h-16 bg-emerald-600 hover:bg-emerald-700 text-white">
                   <div className="flex flex-col items-center gap-2">
                     <Calendar className="h-5 w-5" />
