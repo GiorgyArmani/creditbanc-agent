@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { type NextRequest } from "next/server";
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     return redirect("/auth/error?error=Missing token or type");
   }
 
-  const supabase = await createClient(); // ✅ await necesario
+  const supabase = await createAdminClient(); // ✅ await necesario
 
   // Verificar OTP
   const { error: verifyError } = await supabase.auth.verifyOtp({ token_hash, type });
