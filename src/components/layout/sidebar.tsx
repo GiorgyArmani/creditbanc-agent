@@ -16,7 +16,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
-export function Sidebar() {
+export default function Sidebar() {
   const pathname = usePathname()
   const supabase = createClient()
   const [userEmail, setUserEmail] = useState<string | null>(null)
