@@ -2,32 +2,25 @@
 
 import { Sidebar } from '@/components/layout/sidebar'
 import { useProtectedRoute } from '@/hooks/use-protected-route'
-import { AppHeader } from '@/components/layout/app-header' // si ya lo tienes global
+import { AppHeader } from '@/components/layout/app-header' // opcional
 import React from 'react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   useProtectedRoute()
 
   return (
-    <>
+    <div className="min-h-screen flex bg-gray-50">
       {/* Sidebar fijo */}
       <Sidebar />
 
-      {/* Main layout empujado a la derecha del sidebar */}
-      <div className="ml-64 flex flex-col min-h-screen w-full bg-gray-50">
-        {/* Si quieres tener un header global también */}
-        {/* <AppHeader
-          title="Welcome"
-          subtitle="Let’s grow your business"
-          showProfileButton
-          profileCompletion={0}
-          onProfileClick={() => window.location.href = '/dashboard/business-profile'}
-        /> */}
+      {/* Main content empujado a la derecha del sidebar */}
+      <div className="ml-64 flex flex-col w-full overflow-x-hidden">
+        {/* <AppHeader ... /> si quieres mantenerlo global */}
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 p-6 overflow-y-auto">
           {children}
         </main>
       </div>
-    </>
+    </div>
   )
 }
