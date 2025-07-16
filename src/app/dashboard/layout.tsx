@@ -1,13 +1,29 @@
 // src/app/dashboard/layout.tsx
+'use client'
+
 import { Sidebar } from '@/components/layout/sidebar'
+import { AppHeader } from '@/components/layout/app-header'
+import { useProtectedRoute } from '@/hooks/use-protected-route'
+import React from 'react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  useProtectedRoute()
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen">
       <Sidebar />
-      <main className="flex-1 overflow-auto">{children}</main>
+      <div className="flex flex-col flex-1 bg-gray-50 overflow-hidden">
+        <AppHeader
+          title="Welcome to your Dashboard"
+          subtitle="Let’s grow your business"
+          showProfileButton={true}
+          profileCompletion={0} // ← puedes reemplazar esto con progreso real dinámico
+          onProfileClick={() => window.location.href = '/dashboard/business-profile'}
+        />
+        <main className="flex-1 overflow-auto p-6">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }
-// This layout component wraps the dashboard pages, providing a consistent sidebar and main content area.
-// It ensures that all dashboard pages have the same layout structure, making it easier to manage navigation    
