@@ -43,7 +43,7 @@ export function SignUpForm({
     }
 
     try {
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -55,13 +55,15 @@ export function SignUpForm({
       })
 
       if (signUpError) throw signUpError
-      if (!signUpData?.user && !signUpData?.session) {
-        throw new Error('Signup succeeded but no user/session returned')
+
+      if (!data.user) {
+        throw new Error('Signup succeeded but user was not returned.')
       }
 
-      // Redirige a mensaje de verificación
+      // Espera confirmación por email
       router.push('/auth/check-email')
     } catch (err: any) {
+      console.error('Signup error:', err)
       setError(err.message || 'Signup failed')
     } finally {
       setIsLoading(false)
@@ -136,3 +138,4 @@ export function SignUpForm({
     </div>
   )
 }
+// src/app/auth/check-email/page.tsx
