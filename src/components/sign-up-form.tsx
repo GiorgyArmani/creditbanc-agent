@@ -43,28 +43,19 @@ export function SignUpForm({
     }
 
     try {
-      // Step 1: Create Auth user
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=/dashboard`,
           data: { full_name: fullName },
         },
       })
 
       if (signUpError || !signUpData?.user) throw signUpError || new Error('Signup failed')
 
-      // Step 2: Insert into public.users via RPC function
-      const { error: rpcError } = await supabase.rpc('insert_user_profile', {
-        full_name: fullName,
-        email: email,
-      })
-
-      if (rpcError) throw rpcError
-
-      // Step 3: Redirect
-      router.push('/dashboard')
+      // Redirige a mensaje de verificación
+      router.push('/auth/check-email')
     } catch (err: any) {
       setError(err.message || 'Signup failed')
     } finally {
