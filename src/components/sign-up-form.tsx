@@ -48,11 +48,16 @@ export function SignUpForm({
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/confirm?next=/dashboard`,
-          data: { full_name: fullName },
+          data: {
+            full_name: fullName,
+          },
         },
       })
 
-      if (signUpError || !signUpData?.user) throw signUpError || new Error('Signup failed')
+      if (signUpError) throw signUpError
+      if (!signUpData?.user && !signUpData?.session) {
+        throw new Error('Signup succeeded but no user/session returned')
+      }
 
       // Redirige a mensaje de verificación
       router.push('/auth/check-email')
