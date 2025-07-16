@@ -43,7 +43,7 @@ export function SignUpForm({
     }
 
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -56,14 +56,9 @@ export function SignUpForm({
 
       if (signUpError) throw signUpError
 
-      if (!data.user) {
-        throw new Error('Signup succeeded but user was not returned.')
-      }
-
-      // Espera confirmación por email
+      // Redirige a mensaje de verificación
       router.push('/auth/check-email')
     } catch (err: any) {
-      console.error('Signup error:', err)
       setError(err.message || 'Signup failed')
     } finally {
       setIsLoading(false)
@@ -138,4 +133,3 @@ export function SignUpForm({
     </div>
   )
 }
-// src/app/auth/check-email/page.tsx
