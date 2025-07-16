@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Save, User, Target, DollarSign, Settings } from 'lucide-react'
 
 const DEFAULT_PROFILE: BusinessProfile = {
+  business_name: '', // <-- agregar esto
   business_description: '',
   business_model: '',
   ideal_customer: '',
@@ -23,6 +24,7 @@ const DEFAULT_PROFILE: BusinessProfile = {
   marketing_working: '',
   marketing_not_working: '',
 }
+
 
 export function BusinessProfileBuilder({ initialProfile, onSave, onClose }: BusinessProfileBuilderProps) {
   const [profile, setProfile] = useState<BusinessProfile>(initialProfile || DEFAULT_PROFILE)
@@ -41,6 +43,7 @@ export function BusinessProfileBuilder({ initialProfile, onSave, onClose }: Busi
  const calculateCompletionLevel = () => {
   const fields: (keyof BusinessProfile)[] = [
     'business_description',
+    'business_name',
     'primary_goal',
     'main_challenge',
     'ideal_customer',
@@ -61,10 +64,11 @@ export function BusinessProfileBuilder({ initialProfile, onSave, onClose }: Busi
 
   const handleSave = () => {
     const updatedProfile = {
-      ...profile,
-      completion_level: calculateCompletionLevel(),
-      last_updated: new Date().toISOString(),
-    }
+  ...profile,
+  completion_level: calculateCompletionLevel(),
+  updated_at: new Date().toISOString(), // <- corregido
+  }
+
     onSave(updatedProfile)
   }
 

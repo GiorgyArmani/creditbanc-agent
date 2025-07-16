@@ -50,7 +50,8 @@ export  function Sidebar() {
   ]
 
   return (
-    <div className="w-64 border-r bg-white h-full flex flex-col justify-between shadow-sm">
+    <div className="w-64 h-screen border-r bg-white flex flex-col justify-between shadow-sm">
+
       {/* Header */}
       <div>
         <div className="p-6">
