@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -17,10 +17,20 @@ interface ChatMessageDisplayProps {
   onAction?: () => void
 }
 
+// Limpia contenido con asteriscos sueltos y saltos mal renderizados
+function sanitizeMarkdown(content: string): string {
+  return content
+    .replace(/^\*{1,2}(.+?)\*{1,2}$/gm, '$1')   // línea completa envuelta en * o **
+    .replace(/(?<!\w)\*{1,2}(.+?)\*{1,2}(?!\w)/g, '$1') // palabras envueltas en * o **
+    .replace(/\\n/g, '\n') // si llega con "\\n" lo vuelve salto real
+    .trim()
+}
+
 export function ChatMessageDisplay({ message, onAction }: ChatMessageDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(true)
   const isUser = message.role === "user"
   const isAssistant = message.role === "assistant"
+  const cleanedContent = sanitizeMarkdown(message.content)
   const hasActionButton = isAssistant && message.content.includes("Complete Profile") && onAction
 
   return (
@@ -38,16 +48,19 @@ export function ChatMessageDisplay({ message, onAction }: ChatMessageDisplayProp
             {new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </div>
         </div>
+
         <div className={!isExpanded ? "line-clamp-3" : ""}>
-          <div className="prose prose-sm max-w-none">
-            <ReactMarkdown>{message.content}</ReactMarkdown>
+          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-gray-800">
+            <ReactMarkdown>{cleanedContent}</ReactMarkdown>
           </div>
         </div>
+
         {message.content.length > 300 && (
           <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)} className="text-xs">
             {isExpanded ? "Show less" : "Show more"}
           </Button>
         )}
+
         {hasActionButton && (
           <div className="mt-3">
             <Button onClick={onAction} className="bg-blue-600 hover:bg-blue-700">

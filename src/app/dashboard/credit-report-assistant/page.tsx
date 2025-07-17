@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileDown } from "lucide-react";
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
 
 export default function ChatPage() {
   const [input, setInput] = useState('');
@@ -11,12 +12,19 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
 
-    setMessages(prev => [...prev, `You: ${input}`]);
+    setMessages(prev => [...prev, '⏳ Processing credit report...']);
     setLoading(true);
+    setInput(''); // Limpiar input inmediatamente
 
     try {
       const res = await fetch('/api/generate-report', {
@@ -30,18 +38,17 @@ export default function ChatPage() {
       if (res.ok) {
         let reply = '';
         if (data.markdown) {
-          reply += `\n\nAssistant (Summary):\n${data.markdown}`;
+          reply += data.markdown;
         }
-        setMessages(prev => [...prev, reply]);
+        setMessages(prev => [...prev.slice(0, -1), reply]); // Reemplaza "⏳" con respuesta
         setPdfUrl(data.pdfUrl);
       } else {
-        setMessages(prev => [...prev, `❌ Error: ${data.error}`]);
+        setMessages(prev => [...prev.slice(0, -1), `❌ Error: ${data.error}`]);
       }
     } catch (err) {
-      setMessages(prev => [...prev, `❌ Network error.`]);
+      setMessages(prev => [...prev.slice(0, -1), `❌ Network error.`]);
     }
 
-    setInput('');
     setLoading(false);
   };
 
@@ -54,13 +61,23 @@ export default function ChatPage() {
         </Link>
       </div>
 
+      {/* Mensajes */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 h-80 overflow-y-auto">
         {messages.map((msg, idx) => (
-          <div key={idx} className="mb-3 whitespace-pre-wrap text-sm text-gray-700">{msg}</div>
+          <div
+            key={idx}
+            className="mb-4 text-sm text-gray-700 prose prose-sm max-w-none"
+          >
+            <ReactMarkdown>{msg}</ReactMarkdown>
+          </div>
         ))}
-        {loading && <div>⏳ Processing...</div>}
+        {loading && (
+          <div className="text-sm text-gray-500 italic">⏳ Processing...</div>
+        )}
+        <div ref={bottomRef} />
       </div>
 
+      {/* Formulario */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <textarea
           rows={5}
@@ -68,31 +85,33 @@ export default function ChatPage() {
           placeholder="Paste your credit report here..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          disabled={loading}
         />
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? 'Generating...' : 'Generate Summary'}
         </Button>
       </form>
 
+      {/* PDF Link */}
       {pdfUrl && (
-  <div className="mt-6 flex justify-center">
-    <Button
-      asChild
-      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2"
-    >
-      <a
-        href={pdfUrl}
-        download // fuerza descarga si el navegador lo soporta
-        target="_blank" // lo abre en otra pestaña si el navegador lo permite
-        rel="noopener noreferrer"
-        className="flex items-center gap-2"
-      >
-        <FileDown className="h-5 w-5" />
-        Download Credit Report!
-      </a>
-    </Button>
-  </div>
-)}
+        <div className="mt-6 flex justify-center">
+          <Button
+            asChild
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2"
+          >
+            <a
+              href={pdfUrl}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2"
+            >
+              <FileDown className="h-5 w-5" />
+              Download Credit Report!
+            </a>
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

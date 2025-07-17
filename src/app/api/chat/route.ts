@@ -2,6 +2,18 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { openai } from "@ai-sdk/openai"
 
+function addEmojisToText(text: string): string {
+  return text
+    .replace(/\bidea\b/gi, "💡 idea")
+    .replace(/\bimportant\b/gi, "🔥 important")
+    .replace(/\bgrow|growth|scale\b/gi, "🚀 grow")
+    .replace(/\bsave money|reduce costs|optimize\b/gi, "💰 optimize")
+    .replace(/\bteam\b/gi, "🤝 team")
+    .replace(/\bmarketing\b/gi, "🎯 marketing")
+    .replace(/\bcustomer\b/gi, "🧑‍💼 customer")
+}
+
+
 export async function POST(req: NextRequest) {
   console.log("🚀 Chat API endpoint called")
 
@@ -30,6 +42,7 @@ export async function POST(req: NextRequest) {
         text: "AI service is currently unavailable. Please try again later.",
       })
     }
+
 
     // Get the latest user message
     const userMessage = messages[messages.length - 1]?.content
@@ -82,7 +95,7 @@ Keep responses conversational but informative, and always aim to help them achie
 
     return NextResponse.json({
       success: true,
-      text: text,
+      text: addEmojisToText(text),
     })
   } catch (error) {
     console.error("💥 Chat API error:", error)

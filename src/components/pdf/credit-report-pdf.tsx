@@ -74,7 +74,7 @@ export default function CreditReportPDF({ data }: { data: CreditReportData }) {
     <Document>
       <Page size="A4" style={styles.page}>
         <Image
-          src="https://i.imgur.com/RXHLtpm.png"
+          src="header-logo.png"
           style={{ width: '100%', marginBottom: 10 }}
         />
 

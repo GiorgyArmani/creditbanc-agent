@@ -202,7 +202,7 @@ export default function ModulePage({ params }: { params: { id: string } }) {
     key={lesson.id}
     onClick={() => {
       if (lesson.title === "Credit Report Analyzer Tool") {
-        router.push("/credit-report-assistant");
+        router.push("/dashboard/credit-report-assistant");
       }
     }}
     className={`p-4 border-l-4 cursor-pointer transition-all ${

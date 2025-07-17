@@ -8,6 +8,17 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import ReactMarkdown from "react-markdown"
+
+
+function cleanMarkdown(content: string): string {
+  return content
+    .replace(/(\*\*|__)(.*?)\1/g, '$2') // elimina **bold** o __bold__
+    .replace(/(\*|_)(.*?)\1/g, '$2')    // elimina *italic* o _italic_
+    .replace(/`([^`]+)`/g, '$1')        // elimina `inline code`
+    .trim()
+}
+
 
 interface Message {
   role: 'user' | 'assistant'
@@ -184,7 +195,9 @@ export function AIChatInterface() {
                 </Avatar>
               )}
               <div className={`max-w-[80%] rounded-lg px-4 py-3 ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900'}`}>
-                <div className="text-sm whitespace-pre-wrap">{m.content}</div>
+                <div className="prose prose-sm max-w-none leading-relaxed space-y-2">
+                    <ReactMarkdown>{cleanMarkdown(m.content)}</ReactMarkdown>
+                </div>
                 <div className="text-xs mt-2 text-right opacity-60">
                   {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>

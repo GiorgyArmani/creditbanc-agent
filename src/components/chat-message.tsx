@@ -29,6 +29,13 @@ export function ChatMessage({ message, onShowMeHow, userPlan = "free", onUpgrade
 
   const hasActionButton = isAssistant && message.content.includes("Complete Profile") && onAction
 
+  function cleanMarkdown(content: string): string {
+  return content
+    .replace(/\*\*(.*?)\*\*/g, '$1') // Elimina **bold**
+    .replace(/\*(.*?)\*/g, '$1')     // Elimina *italic*
+    .trim()
+}
+
   const handleUpgradeClick = () => {
     if (onUpgrade) {
       onUpgrade()
@@ -175,7 +182,8 @@ export function ChatMessage({ message, onShowMeHow, userPlan = "free", onUpgrade
           </div>
         </div>
         <div className={cn("prose prose-sm max-w-none border-0 shadow-none", !isExpanded && "line-clamp-3")}>
-          <ReactMarkdown>{message.content}</ReactMarkdown>
+          <ReactMarkdown>{cleanMarkdown(message.content)}</ReactMarkdown>
+
         </div>
         {message.content.length > 300 && (
           <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)} className="text-xs border-0">
