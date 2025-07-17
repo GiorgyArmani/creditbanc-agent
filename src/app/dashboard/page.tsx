@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Play, Download, CheckSquare, Clock, Users, TrendingUp, Calendar } from "lucide-react"
+import { Play, MessageSquare, CheckSquare, Clock, Users, TrendingUp, Calendar } from "lucide-react"
 import Link from "next/link"
 import CreditScoreWidget from "@/components/credit-score-widget"
 import CreditGoalsWidget from "@/components/credit-goals-widget"
@@ -68,7 +68,7 @@ export default function CourseDashboard() {
       case "video":
         return <Play className="h-4 w-4" />
       case "pdf":
-        return <Download className="h-4 w-4" />
+        return <MessageSquare className="h-4 w-4" />
       case "checklist":
         return <CheckSquare className="h-4 w-4" />
       default:
@@ -195,7 +195,7 @@ export default function CourseDashboard() {
                     {module.current && (
                       <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20">In Progress</Badge>
                     )}
-                    <Link href={`/module/${module.id}`}>
+                    <Link href={`/dashboard/module/${module.id}`}>
                       <Button
                         variant={module.current ? "default" : "outline"}
                         className={
@@ -225,7 +225,7 @@ export default function CourseDashboard() {
               <Link href="/dashboard/chat">
                 <Button variant="outline" className="w-full h-16 border-slate-300 text-slate-700 hover:bg-slate-100">
                   <div className="flex flex-col items-center gap-2">
-                    <Download className="h-5 w-5" />
+                    <MessageSquare className="h-5 w-5" />
                     <span>AI Business Coach</span>
                   </div>
                 </Button>
