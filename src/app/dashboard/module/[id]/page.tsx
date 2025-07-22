@@ -18,7 +18,7 @@ import PDFViewer from '@/components/pdf/pdf-viewer'
 interface Lesson {
   id: string
   title: string
-  lesson_type: 'video' | 'pdf' | 'embed' | 'checklist' | 'pitch'
+  lesson_type: 'video' | 'pdf' | 'embed' | 'checklist' | 'pitch' | 'assistant'
   resource_url: string
   display_order: number
 }
