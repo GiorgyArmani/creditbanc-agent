@@ -137,25 +137,57 @@ export default function ModulePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Header */}
       <header className="border-slate-200 bg-white/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900">
-                <ArrowLeft className="h-4 w-4 mr-2" /> Back
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">{module.title}</h1>
-              <p className="text-sm text-slate-600">{module.description}</p>
-            </div>
-          </div>
-          <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-            {Math.round(progressPercent)}% Complete
-          </Badge>
-        </div>
-      </header>
+  <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+    <div className="flex items-center space-x-4">
+      {/* Volver al módulo anterior si existe, si no, ir al dashboard */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-slate-600 hover:text-slate-900"
+        onClick={async () => {
+          const { data: prevModules } = await supabase
+            .from('academy_modules')
+            .select('*')
+            .lt('created_at', module?.created_at)
+            .order('created_at', { ascending: false })
+            .limit(1)
+
+          if (prevModules && prevModules.length > 0) {
+            router.push(`/dashboard/module/${prevModules[0].id}`)
+          } else {
+            router.push('/dashboard')
+          }
+        }}
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back
+      </Button>
+
+      {/* Título del módulo */}
+      <div>
+        <h1 className="text-xl font-bold text-slate-900">{module.title}</h1>
+        <p className="text-sm text-slate-600">{module.description}</p>
+      </div>
+    </div>
+
+    {/* Botón para ir al siguiente módulo si ya completó el actual */}
+    <div className="flex items-center gap-4">
+      {progressPercent === 100 && nextModule && (
+        <Button
+          className="bg-indigo-600 hover:bg-indigo-700"
+          onClick={() => router.push(`/dashboard/module/${nextModule.id}`)}
+        >
+          Next module: {nextModule.title}
+        </Button>
+      )}
+
+      <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+        {Math.round(progressPercent)}% Complete
+      </Badge>
+    </div>
+  </div>
+</header>
 
       {/* Body */}
       <div className="container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
