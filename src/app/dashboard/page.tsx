@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import ModuleCard from '@/components/module-card'
 import { createClient } from '@/lib/supabase/client'
 import { LogoutButton } from "@/components/logout-button"
 import { Button } from "@/components/ui/button"
@@ -34,7 +35,7 @@ export default function CourseDashboard() {
 
   const modules = [
     {
-      id: 1,
+      id: '8d45e4a4-382b-4d40-b162-a00ca4d72243',
       title: "Introduction to Credit Building and Monitoring",
       description: "Learn the fundamentals and connect your scores to IDIQ",
       lessons: 2,
@@ -44,7 +45,7 @@ export default function CourseDashboard() {
       type: "video",
     },
     {
-      id: 2,
+      id: '0c4a5a99-2f4a-4e0f-9037-7dfec4989423',
       title: "Analyze your Credit Report",
       description: "Use our Credit Report Analyzer tool and learn advanced analysis techniques",
       lessons: 2,
@@ -53,7 +54,7 @@ export default function CourseDashboard() {
       type: "checklist",
     },
     {
-      id: 3,
+      id: '6d1b82b1-3445-4973-9290-b2dfc32bd78b',
       title: "Done for you Credit Monitoring",
       description: "Professional credit monitoring setup and tracking system",
       lessons: 2,
