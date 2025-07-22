@@ -54,12 +54,6 @@ export default function ChatPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">💬 Credit Report Assistant</h2>
-        <Link href="/dashboard">
-          <Button variant="outline">← Back to Dashboard</Button>
-        </Link>
-      </div>
 
       {/* Mensajes */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 h-80 overflow-y-auto">
