@@ -41,7 +41,7 @@ export default function CreditRepairCTA({
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <Link href="/book-consultation" className="flex-1">
+          <Link href="/dashboard/book-consultation" className="flex-1">
             <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
               <Phone className="h-4 w-4 mr-2" />
               Book Free Consultation

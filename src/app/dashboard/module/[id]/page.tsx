@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 
 import VideoPlayer from '@/components/video-player'
 import PDFViewer from '@/components/pdf/pdf-viewer'
+import CreditRepairCTA from '@/components/credit-repair-cta'
 
 interface Lesson {
   id: string
@@ -290,7 +291,14 @@ export default function ModulePage() {
               </Button>
             </div>
           )}
+          {/* CTA */} 
+        <div className="mt-8">
+          <CreditRepairCTA />
+          </div>
         </div>
+        
+        
+
       </div>
     </div>
   )
