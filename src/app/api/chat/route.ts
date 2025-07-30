@@ -1,7 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { openai } from "@ai-sdk/openai"
+import { createClient } from "@/lib/supabase/server" // ✅ usamos el cliente de server
 
+// 🔹 función helper para poner emojis en conceptos clave
 function addEmojisToText(text: string): string {
   return text
     .replace(/\bidea\b/gi, "💡 idea")
@@ -13,50 +15,62 @@ function addEmojisToText(text: string): string {
     .replace(/\bcustomer\b/gi, "🧑‍💼 customer")
 }
 
-
 export async function POST(req: NextRequest) {
   console.log("🚀 Chat API endpoint called")
 
   try {
-    // Parse request body
     const body = await req.json()
-    const { messages } = body
+    const { messages, userId } = body
 
     console.log("📝 Received messages:", messages?.length || 0)
 
-    // Validate messages
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      console.error("❌ Invalid messages format")
-      return NextResponse.json({
-        success: false,
-        text: "Invalid message format. Please try again.",
-      })
+      return NextResponse.json({ success: false, text: "Invalid message format." })
     }
 
-    // Check for OpenAI API key
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
-      console.error("❌ OpenAI API key not found")
-      return NextResponse.json({
-        success: false,
-        text: "AI service is currently unavailable. Please try again later.",
-      })
+      return NextResponse.json({ success: false, text: "AI service unavailable." })
     }
 
-
-    // Get the latest user message
     const userMessage = messages[messages.length - 1]?.content
     if (!userMessage) {
-      console.error("❌ No user message found")
-      return NextResponse.json({
-        success: false,
-        text: "No message received. Please try again.",
-      })
+      return NextResponse.json({ success: false, text: "No message received." })
     }
 
     console.log("✅ Processing message:", userMessage.substring(0, 100) + "...")
 
-    // Create system prompt
+    // 🔍 Traer perfil de negocio del usuario desde Supabase
+    let businessContext = ""
+    if (userId) {
+      const supabase = createClient()
+      const { data: profile, error } = await (await supabase)
+        .from("business_profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single()
+
+      if (error) {
+        console.warn("⚠️ No se pudo cargar business_profile:", error.message)
+      }
+
+      if (profile) {
+        businessContext = `
+This is the user's business profile:
+- Business Name: ${profile.business_name || "N/A"}
+- Description: ${profile.business_description || "N/A"}
+- Business Model: ${profile.business_model || "N/A"}
+- Primary Goal: ${profile.primary_goal || "N/A"}
+- Main Challenge: ${profile.main_challenge || "N/A"}
+- Monthly Revenue: ${profile.monthly_revenue || "N/A"}
+- Avg. Ticket Size: ${profile.average_ticket_size || "N/A"}
+
+Use this context to give advice tailored to the business.
+        `
+      }
+    }
+
+    // 👇 Mantienes tu prompt original pero con el perfil como contexto adicional
     const systemPrompt = `You are an expert AI Business Coach with deep knowledge in:
 - Business strategy and planning
 - Marketing and customer acquisition
@@ -65,13 +79,14 @@ export async function POST(req: NextRequest) {
 - Leadership and team building
 - Technology and automation
 
-Provide practical, actionable advice tailored to the user's specific situation. Be encouraging, professional, and focus on concrete next steps they can take.
+Provide practical, actionable advice tailored to the user's specific situation. 
+Be encouraging, professional, and focus on concrete next steps they can take.
 
-Keep responses conversational but informative, and always aim to help them achieve their business goals.`
+Keep responses conversational but informative, and always aim to help them achieve their business goals.
 
-    // Call OpenAI API
-    console.log("🔄 Calling OpenAI API...")
+${businessContext}`
 
+    // 🔄 Llamada al modelo OpenAI
     const { text } = await generateText({
       model: openai("gpt-4o"),
       system: systemPrompt,
@@ -83,51 +98,12 @@ Keep responses conversational but informative, and always aim to help them achie
       temperature: 0.7,
     })
 
-    console.log("✅ OpenAI response received")
-
-    if (!text) {
-      console.error("❌ Empty response from OpenAI")
-      return NextResponse.json({
-        success: false,
-        text: "I'm having trouble generating a response right now. Please try again.",
-      })
-    }
-
-    return NextResponse.json({
-      success: true,
-      text: addEmojisToText(text),
-    })
+    return NextResponse.json({ success: true, text: addEmojisToText(text) })
   } catch (error) {
     console.error("💥 Chat API error:", error)
-
-    // Handle specific error types
-    if (error instanceof Error) {
-      if (error.message.includes("API key")) {
-        return NextResponse.json({
-          success: false,
-          text: "AI service configuration error. Please contact support.",
-        })
-      }
-      if (error.message.includes("rate limit")) {
-        return NextResponse.json({
-          success: false,
-          text: "I'm receiving a lot of requests right now. Please wait a moment and try again.",
-        })
-      }
-      if (error.message.includes("network") || error.message.includes("fetch")) {
-        return NextResponse.json({
-          success: false,
-          text: "Network connection issue. Please check your internet and try again.",
-        })
-      }
-    }
-
     return NextResponse.json(
-      {
-        success: false,
-        text: "I'm experiencing technical difficulties. Please try again in a moment.",
-      },
-      { status: 500 },
+      { success: false, text: "AI service error." },
+      { status: 500 }
     )
   }
 }
