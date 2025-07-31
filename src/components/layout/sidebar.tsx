@@ -10,6 +10,7 @@ import {
   Calendar,
   LogOut,
   User,
+  BookMarked
 } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/client'
@@ -46,16 +47,12 @@ export  function Sidebar() {
     { label: 'AI Chat', href: '/dashboard/chat', icon: MessageSquare },
     { label: 'Credit Report Assistant', href: '/dashboard/credit-report-assistant', icon: FileSearch },
     { label: 'Book Consultation', href: '/dashboard/book-consultation', icon: Calendar },
-    { label: 'Data Room', href: '/dashboard/data-room', icon: FileSearch },
-    { label: 'Onboarding', href: '/dashboard/onboarding', icon: User },
+    { label: 'Data Room', href: '/dashboard/data-room', icon: BookMarked },
     { label: 'Business Profile', href: '/dashboard/business-profile', icon: User },
   ]
 
   return (
     <div className="w-64 h-screen fixed top-0 left-0 bg-white border-r shadow-sm flex flex-col justify-between">
-
-
-
       {/* Header */}
       <div>
         <div className="p-6">

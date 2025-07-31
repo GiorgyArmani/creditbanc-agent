@@ -20,9 +20,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen flex bg-gray-50">
       <Sidebar />
-      <div className="ml-64 flex flex-col w-full overflow-x-hidden">
+      <div className="ml-64 flex flex-col w-full">
         {/* <AppHeader /> opcional */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        {/* ❌ Quitamos overflow-y-auto aquí */}
+        <main className="flex-1 flex flex-col">
           {children}
         </main>
       </div>

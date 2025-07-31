@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Upload, Trash2, Star, Download } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { AppHeader } from '@/components/layout/app-header'
+import { Upload, Trash2, Star, Download, FileText, Folder, Heart } from 'lucide-react'
+import clsx from 'clsx'
 
 interface UserDocument {
   id: string
@@ -28,10 +27,8 @@ export default function DataRoomPage() {
   const [documents, setDocuments] = useState<UserDocument[]>([])
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'all' | 'favorites' | 'invoices' | 'contracts'>('all')
 
-  // --------------------------
-  // Init session
-  // --------------------------
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -42,9 +39,6 @@ export default function DataRoomPage() {
     init()
   }, [])
 
-  // --------------------------
-  // Fetch documents
-  // --------------------------
   const fetchDocuments = async (uid: string) => {
     setLoading(true)
     try {
@@ -53,7 +47,6 @@ export default function DataRoomPage() {
         .select('*')
         .eq('user_id', uid)
         .order('upload_date', { ascending: false })
-
       if (error) throw error
       setDocuments(data || [])
     } catch (err: any) {
@@ -63,32 +56,24 @@ export default function DataRoomPage() {
     }
   }
 
-  // --------------------------
-  // Upload document
-  // --------------------------
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!userId || !e.target.files) return
     const files = Array.from(e.target.files)
-
     setUploading(true)
+
     try {
       for (const file of files) {
         const filePath = `${userId}/${Date.now()}-${file.name}`
-
-        // Upload to storage
-        const { error: uploadError } = await supabase.storage
-          .from('user-documents')
-          .upload(filePath, file)
-
+        const { error: uploadError } = await supabase.storage.from('user-documents').upload(filePath, file)
         if (uploadError) throw uploadError
 
-        // Save metadata in DB
         const { error: dbError } = await supabase.from('user_documents').insert({
           user_id: userId,
           name: file.name,
           size: file.size,
           type: file.type,
           storage_path: filePath,
+          category: file.name.toLowerCase().includes('invoice') ? 'invoices' : 'uncategorized',
         })
         if (dbError) throw dbError
       }
@@ -99,22 +84,40 @@ export default function DataRoomPage() {
       toast({ title: 'Upload error', description: err.message, variant: 'destructive' })
     } finally {
       setUploading(false)
-      e.target.value = '' // reset input
+      e.target.value = ''
     }
   }
 
-  // --------------------------
-  // Download
-  // --------------------------
+  const toggleFavorite = async (doc: UserDocument) => {
+    try {
+      const { error } = await supabase
+        .from('user_documents')
+        .update({ is_favorite: !doc.is_favorite })
+        .eq('id', doc.id)
+      if (error) throw error
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === doc.id ? { ...d, is_favorite: !doc.is_favorite } : d))
+      )
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' })
+    }
+  }
+
+  const handleDelete = async (doc: UserDocument) => {
+    try {
+      await supabase.storage.from('user-documents').remove([doc.storage_path])
+      await supabase.from('user_documents').delete().eq('id', doc.id)
+      setDocuments((prev) => prev.filter((d) => d.id !== doc.id))
+      toast({ title: 'Deleted', description: `${doc.name} has been removed.` })
+    } catch (err: any) {
+      toast({ title: 'Delete error', description: err.message, variant: 'destructive' })
+    }
+  }
+
   const handleDownload = async (doc: UserDocument) => {
     try {
-      const { data, error } = await supabase.storage
-        .from('user-documents')
-        .download(doc.storage_path)
-
-      if (error) throw error
+      const { data } = await supabase.storage.from('user-documents').download(doc.storage_path)
       if (!data) return
-
       const url = URL.createObjectURL(data)
       const a = document.createElement('a')
       a.href = url
@@ -128,117 +131,103 @@ export default function DataRoomPage() {
     }
   }
 
-  // --------------------------
-  // Delete
-  // --------------------------
-  const handleDelete = async (doc: UserDocument) => {
-    try {
-      await supabase.storage.from('user-documents').remove([doc.storage_path])
-      const { error } = await supabase.from('user_documents').delete().eq('id', doc.id)
-      if (error) throw error
-
-      setDocuments((prev) => prev.filter((d) => d.id !== doc.id))
-      toast({ title: 'Deleted', description: `${doc.name} has been removed.` })
-    } catch (err: any) {
-      toast({ title: 'Delete error', description: err.message, variant: 'destructive' })
-    }
-  }
-
-  // --------------------------
-  // Toggle Favorite
-  // --------------------------
-  const toggleFavorite = async (doc: UserDocument) => {
-    try {
-      const { error } = await supabase
-        .from('user_documents')
-        .update({ is_favorite: !doc.is_favorite })
-        .eq('id', doc.id)
-      if (error) throw error
-
-      setDocuments((prev) =>
-        prev.map((d) =>
-          d.id === doc.id ? { ...d, is_favorite: !doc.is_favorite } : d
-        )
-      )
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' })
-    }
-  }
+  const filteredDocs = documents.filter((doc) => {
+    if (activeTab === 'all') return true
+    if (activeTab === 'favorites') return doc.is_favorite
+    return doc.category === activeTab
+  })
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-8 w-full min-h-screen space-y-8">
       {/* Header */}
-      <AppHeader
-        title="Data Room"
-        subtitle="Upload and manage your business documents"
-      />
-
-      {/* Upload Box */}
-      <div className="bg-white border rounded-lg shadow-sm p-6">
-        <h4 className="font-medium text-gray-900 mb-2">Upload documents</h4>
-        <p className="text-sm text-gray-500 mb-4">PDF, Word, Excel, Invoices and more</p>
-        <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:bg-gray-50 transition">
-          <Upload className="h-8 w-8 text-emerald-600 mb-2" />
-          <span className="text-sm text-gray-600">Click to select files</span>
-          <input
-            type="file"
-            multiple
-            onChange={handleUpload}
-            className="hidden"
-          />
-        </label>
-        {uploading && <p className="text-sm text-emerald-600 mt-2">Uploading...</p>}
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 bg-emerald-600 rounded-lg flex items-center justify-center shadow">
+          <Folder className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Data Room</h2>
+          <p className="text-gray-500">Upload, organize and manage your documents</p>
+        </div>
       </div>
 
-      {/* Document List */}
-      <div className="bg-white border rounded-lg shadow-sm p-6">
-        <h4 className="font-medium text-gray-900 mb-4">My Documents</h4>
-        {loading ? (
-          <p className="text-gray-500">Loading documents...</p>
-        ) : documents.length === 0 ? (
-          <p className="text-gray-500">No documents uploaded yet.</p>
-        ) : (
-          <ul className="divide-y divide-gray-200">
-            {documents.map((doc) => (
-              <li key={doc.id} className="flex items-center justify-between py-3">
-                <div>
-                  <p className="font-medium text-gray-900">
-                    {doc.custom_label || doc.name}{' '}
-                    {doc.is_favorite && <span className="text-yellow-500">★</span>}
+      {/* Tabs */}
+      <div className="flex flex-wrap gap-3">
+        {[
+          { key: 'all', label: 'All', icon: Folder },
+          { key: 'favorites', label: 'Favorites', icon: Heart },
+          { key: 'invoices', label: 'Invoices', icon: FileText },
+          { key: 'contracts', label: 'Contracts', icon: FileText },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key as any)}
+            className={clsx(
+              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition',
+              activeTab === tab.key
+                ? 'bg-emerald-600 text-white shadow'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            )}
+          >
+            <tab.icon className="h-4 w-4" />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Layout 2 columnas */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Upload Box */}
+        <div className="bg-white border rounded-xl shadow p-10 flex flex-col items-center justify-center lg:col-span-1">
+          <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-10 cursor-pointer hover:bg-gray-50 transition w-full">
+            <Upload className="h-14 w-14 text-emerald-600 mb-3" />
+            <span className="font-medium text-gray-700">Click or drag files here</span>
+            <span className="text-sm text-gray-500">PDF, Word, Excel, Invoices and more</span>
+            <input type="file" multiple onChange={handleUpload} className="hidden" />
+          </label>
+          {uploading && <p className="text-sm text-emerald-600 mt-3">Uploading...</p>}
+        </div>
+
+        {/* Docs */}
+        <div className="bg-white border rounded-xl shadow p-6 lg:col-span-2">
+          {loading ? (
+            <p className="text-gray-500 text-center">Loading documents...</p>
+          ) : filteredDocs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+              <FileText className="h-14 w-14 mb-3 text-gray-400" />
+              <p>No documents found in this category.</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+              {filteredDocs.map((doc) => (
+                <div key={doc.id} className="flex flex-col border rounded-lg p-4 bg-gray-50 hover:shadow-md transition">
+                  <div className="flex justify-between items-start">
+                    <p className="font-medium text-gray-900 truncate">{doc.custom_label || doc.name}</p>
+                    <button onClick={() => toggleFavorite(doc)}>
+                      <Star className={clsx('h-5 w-5', doc.is_favorite ? 'text-yellow-500 fill-yellow-500' : 'text-gray-400')} />
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {(doc.size / 1024).toFixed(1)} KB • {doc.category || 'Uncategorized'}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    {doc.category || 'Uncategorized'} • {(doc.size / 1024).toFixed(1)} KB
-                  </p>
+                  <div className="mt-4 flex gap-2">
+                    <button
+                      onClick={() => handleDownload(doc)}
+                      className="flex-1 py-2 text-sm font-medium text-emerald-600 border rounded hover:bg-emerald-50"
+                    >
+                      <Download className="inline h-4 w-4 mr-1" /> Download
+                    </button>
+                    <button
+                      onClick={() => handleDelete(doc)}
+                      className="flex-1 py-2 text-sm font-medium text-red-600 border rounded hover:bg-red-50"
+                    >
+                      <Trash2 className="inline h-4 w-4 mr-1" /> Delete
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => toggleFavorite(doc)}
-                    className="p-2 rounded hover:bg-gray-100"
-                    title={doc.is_favorite ? 'Unmark favorite' : 'Mark favorite'}
-                  >
-                    <Star
-                      className={`h-5 w-5 ${doc.is_favorite ? 'text-yellow-500 fill-yellow-500' : 'text-gray-400'}`}
-                    />
-                  </button>
-                  <button
-                    onClick={() => handleDownload(doc)}
-                    className="p-2 rounded hover:bg-gray-100"
-                    title="Download"
-                  >
-                    <Download className="h-5 w-5 text-emerald-600" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(doc)}
-                    className="p-2 rounded hover:bg-gray-100"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-5 w-5 text-red-600" />
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

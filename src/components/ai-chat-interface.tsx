@@ -167,7 +167,7 @@ export function AIChatInterface() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-white">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-white sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-3">
