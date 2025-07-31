@@ -192,7 +192,7 @@ export function AIChatInterface() {
             <div key={m.id} className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {m.role === 'assistant' && (
                 <Avatar className="w-9 h-9 bg-emerald-600 shadow-md">
-                  <AvatarFallback className="text-white"><Bot className="w-4 h-4" /></AvatarFallback>
+                  <AvatarFallback className="text-black"><Bot className="w-4 h-4" /></AvatarFallback>
                 </Avatar>
               )}
               <div
@@ -201,14 +201,25 @@ export function AIChatInterface() {
                     ? 'bg-emerald-600 text-white max-w-[75%]'
                     : 'bg-white border border-gray-200 text-gray-800 max-w-[75%]'}`}
               >
-                <ReactMarkdown>{cleanMarkdown(m.content)}</ReactMarkdown>
+                <ReactMarkdown
+                    components={{
+                      a: ({ node, ...props }) => (
+                        <a
+                          {...props}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-emerald-600 hover:underline font-medium"
+                        />
+                      ),
+                    }}
+                  >{cleanMarkdown(m.content)}</ReactMarkdown>
                 <div className="text-[11px] mt-2 opacity-60 text-right">
                   {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
               {m.role === 'user' && (
                 <Avatar className="w-9 h-9 bg-gray-600 shadow-md">
-                  <AvatarFallback className="text-white"><User className="w-4 h-4" /></AvatarFallback>
+                  <AvatarFallback className="text-black"><User className="w-4 h-4" /></AvatarFallback>
                 </Avatar>
               )}
             </div>
@@ -216,7 +227,7 @@ export function AIChatInterface() {
           {isLoading && (
             <div className="flex gap-3">
               <Avatar className="w-9 h-9 bg-emerald-600 shadow-md">
-                <AvatarFallback className="text-white"><Bot className="w-4 h-4" /></AvatarFallback>
+                <AvatarFallback className="text-black"><Bot className="w-4 h-4" /></AvatarFallback>
               </Avatar>
               <div className="bg-white border border-gray-200 rounded-2xl px-5 py-3 shadow-sm text-gray-600 flex gap-1">
                 <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
