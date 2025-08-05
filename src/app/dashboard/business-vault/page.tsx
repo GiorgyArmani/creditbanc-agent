@@ -145,7 +145,7 @@ export default function DataRoomPage() {
           <Folder className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Data Room</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Business Vault</h2>
           <p className="text-gray-500">Upload, organize and manage your documents</p>
         </div>
       </div>
@@ -154,9 +154,10 @@ export default function DataRoomPage() {
       <div className="flex flex-wrap gap-3">
         {[
           { key: 'all', label: 'All', icon: Folder },
-          { key: 'favorites', label: 'Favorites', icon: Heart },
+          { key: 'bank_statements', label: 'Bank Statements', icon: FileText },
           { key: 'invoices', label: 'Invoices', icon: FileText },
           { key: 'contracts', label: 'Contracts', icon: FileText },
+          { key: 'tax_returns', label: 'Tax Returns', icon: FileText },
         ].map((tab) => (
           <button
             key={tab.key}

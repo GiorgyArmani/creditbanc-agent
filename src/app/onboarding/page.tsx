@@ -50,7 +50,7 @@ export default function OnboardingFlow() {
   const [profile, setProfile] = useState<Partial<BusinessProfile>>({})
   const router = useRouter()
   const supabase = createClient()
-
+ 
   const steps: Step[] = [
     {
       title: "Tell us about your business",

@@ -47,7 +47,7 @@ export  function Sidebar() {
     { label: 'AI Chat', href: '/dashboard/chat', icon: MessageSquare },
     { label: 'Credit Report Assistant', href: '/dashboard/credit-report-assistant', icon: FileSearch },
     { label: 'Book Consultation', href: '/dashboard/book-consultation', icon: Calendar },
-    { label: 'Data Room', href: '/dashboard/data-room', icon: BookMarked },
+    { label: 'Business Vault', href: '/dashboard/business-vault', icon: BookMarked },
     { label: 'Business Profile', href: '/dashboard/business-profile', icon: User },
   ]
 
