@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import {
   Bot, Loader2, Send, ArrowDown, ArrowUp, User,
-  Plus, ChevronDown, Sparkles, Star
+  Plus, ChevronDown, Sparkles, Star, Trash2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -84,7 +84,7 @@ export function AIChatInterface() {
         `Hey${name ? `, ${name}` : ''}! I’m your AI Business Coach. 👋`,
         industry ? `I see you’re in **${industry}**.` : '',
         goal ? `Top priority noted: **${goal}**.` : '',
-        `How can I help today? I can brainstorm growth ideas, review your strategy, or outline next steps.`,
+        `How can I help today? I can brainstorm growth ideas, review your strategy, or outline next steps.`
       ].filter(Boolean).join(' ')
     }
 
@@ -120,7 +120,7 @@ How can I help today? I can brainstorm growth ideas, review your strategy, or ou
       if (!user?.id) return
       setUserId(user.id)
 
-      // Profile (for personalization)
+      // Profile
       const { data: biz } = await supabase
         .from('business_profiles')
         .select('*')
@@ -128,7 +128,7 @@ How can I help today? I can brainstorm growth ideas, review your strategy, or ou
         .maybeSingle()
       setProfile(biz || null)
 
-      // Sessions (order: starred first, then newest)
+      // Sessions (starred first, then newest)
       setLoadingSessions(true)
       const { data: existingSessions, error: sErr } = await supabase
         .from('chat_sessions')
@@ -158,7 +158,7 @@ How can I help today? I can brainstorm growth ideas, review your strategy, or ou
         sessionsList = created || []
       }
 
-      // local sort fallback (in case DB misses index yet)
+      // local sort fallback
       sessionsList.sort((a, b) => {
         const sa = a.starred ? 1 : 0
         const sb = b.starred ? 1 : 0
@@ -171,7 +171,6 @@ How can I help today? I can brainstorm growth ideas, review your strategy, or ou
       setSessionId(active.id)
       setLoadingSessions(false)
 
-      // Load messages for active session
       await loadMessages(active.id, { injectWelcomeIfEmpty: true })
     }
 
@@ -179,7 +178,7 @@ How can I help today? I can brainstorm growth ideas, review your strategy, or ou
     init()
   }, [])
 
-  // Load messages for a session; optionally inject welcome if empty
+  // Load messages; optionally inject welcome if empty
   const loadMessages = async (targetSessionId: string, opts?: { injectWelcomeIfEmpty?: boolean }) => {
     const { data: storedMessages, error } = await supabase
       .from('chat_messages')
@@ -187,20 +186,15 @@ How can I help today? I can brainstorm growth ideas, review your strategy, or ou
       .eq('session_id', targetSessionId)
       .order('timestamp', { ascending: true })
 
-    if (error) {
-      console.error(error)
-      setMessages([])
-      return
-    }
-
-    const mapped = (storedMessages ?? []).map((m) => ({
+    const mapped: Message[] = (storedMessages ?? []).map((m) => ({
       id: m.id,
       content: m.content,
       role: m.role,
       timestamp: new Date(m.timestamp),
-    })) as Message[]
+    }))
 
-    if ((opts?.injectWelcomeIfEmpty && mapped.length === 0)) {
+    const shouldInjectWelcome = opts?.injectWelcomeIfEmpty && (error || mapped.length === 0)
+    if (shouldInjectWelcome) {
       const welcome: Message = {
         id: `assistant-welcome-${Date.now()}`,
         role: 'assistant',
@@ -208,14 +202,24 @@ How can I help today? I can brainstorm growth ideas, review your strategy, or ou
         timestamp: new Date(),
       }
       setMessages([welcome])
-      await supabase.from('chat_messages').insert({
+
+      // try to persist; ignore failure if RLS not ready yet
+      const ins = await supabase.from('chat_messages').insert({
         session_id: targetSessionId,
         role: 'assistant',
         content: welcome.content,
       })
-    } else {
-      setMessages(mapped)
+      if (ins.error) console.warn('Welcome insert failed:', ins.error)
+      return
     }
+
+    if (error) {
+      console.error(error)
+      setMessages([])
+      return
+    }
+
+    setMessages(mapped)
   }
 
   // New chat
@@ -280,6 +284,50 @@ How can I help today? I can brainstorm growth ideas, review your strategy, or ou
     }
   }
 
+  // Delete current session
+  const handleDeleteCurrent = async () => {
+    if (!sessionId) return
+    const confirm = window.confirm('Delete this chat? This action will remove all its messages.')
+    if (!confirm) return
+
+    // optimistic remove from UI first
+    const prevSessions = sessions
+    const idx = prevSessions.findIndex(s => s.id === sessionId)
+    const nextSessions = prevSessions.filter(s => s.id !== sessionId)
+    setSessions(nextSessions)
+    setMessages([])
+
+    // pick next active session (prev sibling if exists, else first, else create new)
+    const pickNext =
+      (idx > 0 && nextSessions[idx - 1]?.id) ||
+      nextSessions[0]?.id ||
+      null
+    setSessionId(pickNext)
+
+    // delete in DB (messages cascade)
+    const { error } = await supabase
+      .from('chat_sessions')
+      .delete()
+      .eq('id', sessionId)
+
+    if (error) {
+      // rollback UI if failed
+      toast({ title: 'Error', description: 'Could not delete this chat.', variant: 'destructive' })
+      setSessions(prevSessions)
+      setSessionId(sessionId)
+      await loadMessages(sessionId, { injectWelcomeIfEmpty: true })
+      return
+    }
+
+    // if nothing left, start a fresh one
+    if (!pickNext) {
+      await handleNewChat()
+      return
+    }
+
+    await loadMessages(pickNext, { injectWelcomeIfEmpty: true })
+  }
+
   // --- Scrolling ---
   useEffect(() => {
     if (isAtBottom) {
@@ -323,7 +371,7 @@ How can I help today? I can brainstorm growth ideas, review your strategy, or ou
       content: userMessage.content,
     })
 
-    // Auto-title: first user message becomes title if title is null/Untitled
+    // Auto-title: first user message becomes title
     const current = sessions.find(s => s.id === sessionId)
     if (current && (!current.title || current.title.trim().toLowerCase() === 'untitled session')) {
       const newTitle = userMessage.content.slice(0, 60)
@@ -397,7 +445,7 @@ How can I help today? I can brainstorm growth ideas, review your strategy, or ou
           </div>
         </div>
 
-        {/* Session Switcher + Star */}
+        {/* Session Switcher + Actions */}
         <div className="flex items-center gap-2">
           <div className="relative">
             <select
@@ -423,6 +471,10 @@ How can I help today? I can brainstorm growth ideas, review your strategy, or ou
             title={isActiveStarred ? 'Unpin chat' : 'Pin chat'}
           >
             <Star className={clsx('h-4 w-4', isActiveStarred ? 'fill-current' : '')} />
+          </Button>
+
+          <Button size="icon" variant="outline" className="h-9 w-9" onClick={handleDeleteCurrent} title="Delete chat">
+            <Trash2 className="h-4 w-4" />
           </Button>
 
           <Button size="sm" variant="outline" onClick={handleNewChat}>
@@ -575,7 +627,6 @@ How can I help today? I can brainstorm growth ideas, review your strategy, or ou
             )}
           </Button>
         </form>
-        <div className='mx-auto w-100'><p>AI Can Make mistakes. CreditBanc don't share or train models with your data</p></div>
       </div>
     </div>
   )
