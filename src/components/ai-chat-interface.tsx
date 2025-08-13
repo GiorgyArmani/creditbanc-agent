@@ -574,8 +574,8 @@ How can I help today? I can brainstorm growth ideas, review your strategy, or ou
               <Send className="w-5 h-5 text-white" />
             )}
           </Button>
-          <div><p>AI Can Make mistakes please </p></div>
         </form>
+        <div className='mx-auto w-100'><p>AI Can Make mistakes. CreditBanc don't share or train models with your data</p></div>
       </div>
     </div>
   )
