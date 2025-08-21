@@ -19,14 +19,8 @@ export type CreditReportData = {
   installmentAccounts: string[][]
 }
 
-
-// Styles
 const styles = StyleSheet.create({
-  page: {
-    padding: 24,
-    fontFamily: 'Helvetica',
-    fontSize: 12,
-  },
+  page: { padding: 24, fontFamily: 'Helvetica', fontSize: 12 },
   section: { marginBottom: 12 },
   heading: { fontSize: 14, marginBottom: 6, fontWeight: 'bold' },
   table: {
@@ -68,13 +62,18 @@ const Table = ({ headers, rows }: { headers: string[]; rows: string[][] }) => (
   </View>
 )
 
-
-export default function CreditReportPDF({ data }: { data: CreditReportData }) {
+export default function CreditReportPDF({
+  data,
+  headerUrl,
+}: {
+  data: CreditReportData
+  headerUrl?: string
+}) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         <Image
-          src="header-logo.png"
+          src={headerUrl || '/header-logo.png'}
           style={{ width: '100%', marginBottom: 10 }}
         />
 
