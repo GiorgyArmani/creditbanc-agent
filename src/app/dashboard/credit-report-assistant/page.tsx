@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { FileDown, Trash2, Eye } from 'lucide-react';
+import { FileDown, Trash2, Eye, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import PDFViewer from '@/components/pdf/pdf-viewer'; // visor existente
-// ^ Usa el mismo viewer con toggle + download que ya tienes :contentReference[oaicite:3]{index=3}
+import PDFViewer from '@/components/pdf/pdf-viewer';
 
+// --- Types ---
 type ReportRow = {
   id: string;
   title: string | null;
@@ -18,10 +18,13 @@ type ReportRow = {
 
 export default function CreditReportAssistantPage() {
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [title, setTitle] = useState<string>('Credit Report');
+
+  // Progress / phases
+  const [phase, setPhase] = useState<'idle' | 'queue' | 'analyze' | 'render' | 'upload' | 'done' | 'error'>('idle');
+  const [progress, setProgress] = useState(0);
 
   // Listado
   const [reports, setReports] = useState<ReportRow[]>([]);
@@ -35,12 +38,25 @@ export default function CreditReportAssistantPage() {
   const userId = (typeof window !== 'undefined' && (window as any).__USER_ID__) || '';
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
-
-  useEffect(() => {
     if (userId) refreshList();
   }, [userId]);
+
+  // Animate progress smoothly per phase
+  useEffect(() => {
+    if (!loading) return;
+    const caps: Record<typeof phase, number> = {
+      idle: 0,
+      queue: 20,
+      analyze: 55,
+      render: 80,
+      upload: 95,
+      done: 100,
+      error: 100,
+    };
+    const cap = caps[phase];
+    const t = setInterval(() => setProgress((p) => (p < cap ? Math.min(p + 2, cap) : p)), 150);
+    return () => clearInterval(t);
+  }, [loading, phase]);
 
   async function refreshList() {
     try {
@@ -49,7 +65,7 @@ export default function CreditReportAssistantPage() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || 'Failed to load reports');
       setReports(j.items || []);
-    } catch (e: any) {
+    } catch (e) {
       console.error(e);
     } finally {
       setListLoading(false);
@@ -58,38 +74,38 @@ export default function CreditReportAssistantPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || loading) return;
 
-    setMessages((prev) => [...prev, '⏳ Processing credit report...']);
+    setPhase('queue');
     setLoading(true);
+    setProgress(5);
     setPdfUrl(null);
     setInlineViewUrl(null);
 
     try {
-      // Igual que tu flujo actual: envía texto → API llama assistant → JSON → PDF
-      // Esto ya lo hacías en tu page, solo que ahora refrescamos la lista cuando termina:contentReference[oaicite:4]{index=4}
-      const res = await fetch('/api/generate-report' ,{
+      setPhase('analyze');
+      const res = await fetch('/api/generate-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ creditText: input, title: 'Credit Report', userId }),
       });
 
+      setPhase('render');
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to generate report');
 
+      setPhase('upload');
       setTitle(data.title || 'Credit Report');
-      setMessages((prev) => [
-        ...prev.slice(0, -1),
-        `✅ Report ready for ${data.fullName} (date: ${data.reportDate}).`,
-      ]);
       setPdfUrl(data.url);
-      setInlineViewUrl(data.url); // lo mostramos abajo en el visor
+      setInlineViewUrl(data.url);
       setInput('');
 
-      // refrescar listado
-      if (userId) refreshList();
-    } catch (err: any) {
-      setMessages((prev) => [...prev.slice(0, -1), `❌ ${err.message || 'Network error.'}`]);
+      await refreshList();
+      setPhase('done');
+      setProgress(100);
+    } catch (err) {
+      console.error(err);
+      setPhase('error');
     } finally {
       setLoading(false);
     }
@@ -110,111 +126,142 @@ export default function CreditReportAssistantPage() {
     }
   }
 
+  const steps = useMemo(
+    () => [
+      { key: 'queue', label: 'Queued' },
+      { key: 'analyze', label: 'Analyzing' },
+      { key: 'render', label: 'Building PDF' },
+      { key: 'upload', label: 'Uploading' },
+      { key: 'done', label: 'Ready' },
+    ] as { key: typeof phase; label: string }[],
+    [phase]
+  );
+
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">💬 Credit Report Assistant</h2>
+    <div className="max-w-6xl mx-auto px-6 py-10">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Credit Report Assistant</h1>
+          <p className="text-sm text-muted-foreground mt-1">Paste a report → we analyze it and deliver a branded PDF.</p>
+        </div>
         <Link href="/dashboard">
           <Button variant="outline">← Back to Dashboard</Button>
         </Link>
       </div>
 
-      {/* Mensajes/estado */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 h-40 overflow-y-auto">
-        {messages.map((msg, idx) => (
-          <div key={idx} className="mb-2 text-sm text-gray-700">{msg}</div>
-        ))}
-        {loading && <div className="text-sm text-gray-500 italic">⏳ Processing...</div>}
-        <div ref={bottomRef} />
+      {/* Composer */}
+      <div className="rounded-2xl border bg-white/60 shadow-sm p-4 md:p-6 mb-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <textarea
+            rows={6}
+            className="w-full p-3 rounded-lg border text-sm leading-6 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+            placeholder="Paste your credit report here…"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={loading}
+          />
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Tip: incluye scores, cuentas y notas relevantes.</span>
+            <Button type="submit" className="min-w-[160px]" disabled={loading || !input.trim()}>
+              {loading ? (
+                <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Generating…</span>
+              ) : (
+                'Generate PDF'
+              )}
+            </Button>
+          </div>
+        </form>
+
+        {/* Progress + steps */}
+        {(loading || phase === 'done' || phase === 'error') && (
+          <div className="mt-5 space-y-2">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+              <div
+                className={`h-full bg-emerald-500 transition-all`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-600">
+              {steps.map((s, i) => {
+                const idx = steps.findIndex((x) => x.key === phase);
+                const me = steps.findIndex((x) => x.key === s.key);
+                const active = me === idx;
+                const done = me < idx || phase === 'done';
+                return (
+                  <span
+                    key={s.key}
+                    className={`px-2 py-0.5 rounded-full border ${done ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : active ? 'bg-gray-50 border-gray-300 text-gray-800' : 'bg-white border-gray-200 text-gray-500'}`}
+                  >
+                    {s.label}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Formulario: pegar texto del reporte */}
-      <form onSubmit={handleSubmit} className="space-y-4 mb-8">
-        <textarea
-          rows={5}
-          className="w-full p-3 border border-gray-300 rounded-md text-sm"
-          placeholder="Paste your credit report here..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={loading}
-        />
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? 'Generating...' : 'Generate PDF'}
-        </Button>
-      </form>
-
-      {/* Visor del último generado */}
+      {/* Viewer */}
       {inlineViewUrl && (
-        <div className="mb-8">
-          <PDFViewer title={title} pdfUrl={inlineViewUrl} /> {/* visor con toggle + download:contentReference[oaicite:5]{index=5} */}
+        <div className="rounded-2xl border bg-white/60 shadow-sm p-3 md:p-5 mb-10">
+          <div className="mb-2 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">{title}</h2>
+              <p className="text-xs text-muted-foreground">Preview below. Use the toolbar to download or open in new tab.</p>
+            </div>
+          </div>
+          <PDFViewer title={title} pdfUrl={inlineViewUrl} />
         </div>
       )}
 
-      {/* Lista de reportes del usuario */}
+      {/* History */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-800">My Reports</h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={refreshList}
-            disabled={listLoading}
-          >
-            {listLoading ? 'Refreshing...' : 'Refresh'}
+          <h3 className="text-lg font-semibold">My Reports</h3>
+          <Button variant="outline" size="sm" onClick={refreshList} disabled={listLoading}>
+            {listLoading ? 'Refreshing…' : 'Refresh'}
           </Button>
         </div>
 
-        <div className="rounded-md border divide-y">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {reports.length === 0 && (
-            <div className="p-4 text-sm text-gray-500">No reports yet.</div>
+            <div className="col-span-full rounded-xl border p-6 text-sm text-muted-foreground">No reports yet.</div>
           )}
 
           {reports.map((r) => (
-            <div key={r.id} className="p-3 flex items-center gap-3">
-              <div className="flex-1">
-                <div className="font-medium text-sm text-gray-900">
-                  {r.title || 'Credit Report'}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {r.full_name ? `Client: ${r.full_name}` : ''}{' '}
-                  {r.report_date ? ` • Date: ${r.report_date}` : ''}{' '}
-                  • Created: {new Date(r.created_at).toLocaleString()}
+            <div key={r.id} className="rounded-xl border bg-white/60 shadow-sm p-4 flex flex-col">
+              <div className="mb-2">
+                <div className="font-medium text-sm">{r.title || 'Credit Report'}</div>
+                <div className="text-xs text-muted-foreground">
+                  {r.full_name ? `Client: ${r.full_name}` : ''}
+                  {r.report_date ? ` • Date: ${r.report_date}` : ''}
+                  {` • Created: ${new Date(r.created_at).toLocaleString()}`}
                 </div>
               </div>
-
-              <div className="flex gap-2">
+              <div className="mt-auto flex gap-2 flex-wrap">
                 {r.report_pdf_url && (
                   <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setInlineViewUrl(r.report_pdf_url!)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
+                    <Button size="sm" variant="outline" onClick={() => setInlineViewUrl(r.report_pdf_url!)}>
+                      <Eye className="h-4 w-4 mr-1" /> View
                     </Button>
                     <Button size="sm" asChild className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                      <a
-                        href={r.report_pdf_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download
-                      >
-                        <FileDown className="h-4 w-4 mr-1" />
-                        Download
+                      <a href={r.report_pdf_url} target="_blank" rel="noopener noreferrer" download>
+                        <FileDown className="h-4 w-4 mr-1" /> Download
                       </a>
                     </Button>
                   </>
                 )}
-                <Button size="sm" variant="destructive" onClick={() => handleDelete(r.id)}>
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Delete
+                <Button size="sm" variant="destructive" onClick={() => handleDelete(r.id)} className="ml-auto">
+                  <Trash2 className="h-4 w-4 mr-1" /> Delete
                 </Button>
               </div>
             </div>
           ))}
         </div>
       </section>
+
+      <div ref={bottomRef} />
     </div>
   );
 }
