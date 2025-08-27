@@ -36,8 +36,9 @@ export default function OnboardingModal({
   const [profile, setProfile] = useState<Partial<BusinessProfile>>({});
   const supabase = createClient();
   const router = useRouter();
-  const step: Step = steps[currentStep];
-  const progress = ((currentStep + 1) / steps.length) * 100;
+  const step: Step | undefined = steps[currentStep];
+  const progress = steps.length > 0 ? ((currentStep + 1) / steps.length) * 100 : 0;
+  if (!step) return null;
 
   const handleChange = (key: keyof BusinessProfile, value: string) => {
     setProfile((prev) => ({ ...prev, [key]: value }));
