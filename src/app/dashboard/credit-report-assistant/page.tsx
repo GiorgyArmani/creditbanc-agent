@@ -1,3 +1,4 @@
+// app/dashboard/credit-report-assistant/page.tsx
 'use client';
 
 import { useEffect, useRef, useState, useMemo } from 'react';
@@ -29,17 +30,17 @@ export default function CreditReportAssistantPage() {
   // Listado
   const [reports, setReports] = useState<ReportRow[]>([]);
   const [listLoading, setListLoading] = useState(false);
+  const [firstLoad, setFirstLoad] = useState(true); // ← evita mostrar “onboarding” antes de cargar
 
   // UI
   const [inlineViewUrl, setInlineViewUrl] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // ⚠️ Reemplaza esto por tu userId real (Supabase Auth o server-props)
-  const userId = (typeof window !== 'undefined' && (window as any).__USER_ID__) || '';
-
+  // Eliminar dependencia de userId y cargar al montar
   useEffect(() => {
-    if (userId) refreshList();
-  }, [userId]);
+    refreshList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Animate progress smoothly per phase
   useEffect(() => {
@@ -61,7 +62,7 @@ export default function CreditReportAssistantPage() {
   async function refreshList() {
     try {
       setListLoading(true);
-      const r = await fetch(`/api/reports?userId=${userId}`);
+      const r = await fetch(`/api/reports`, { cache: 'no-store' }); // ← no-store para evitar flicker
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || 'Failed to load reports');
       setReports(j.items || []);
@@ -69,6 +70,7 @@ export default function CreditReportAssistantPage() {
       console.error(e);
     } finally {
       setListLoading(false);
+      setFirstLoad(false); // ← ya terminó el primer fetch
     }
   }
 
@@ -87,7 +89,7 @@ export default function CreditReportAssistantPage() {
       const res = await fetch('/api/generate-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ creditText: input, title: 'Credit Report', userId }),
+        body: JSON.stringify({ creditText: input, title: 'Credit Report' }), // ← sin userId
       });
 
       setPhase('render');
@@ -162,10 +164,12 @@ export default function CreditReportAssistantPage() {
             disabled={loading}
           />
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Tip: incluye scores, cuentas y notas relevantes.</span>
+            
             <Button type="submit" className="min-w-[160px]" disabled={loading || !input.trim()}>
               {loading ? (
-                <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Generating…</span>
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Generating…
+                </span>
               ) : (
                 'Generate PDF'
               )}
@@ -177,13 +181,10 @@ export default function CreditReportAssistantPage() {
         {(loading || phase === 'done' || phase === 'error') && (
           <div className="mt-5 space-y-2">
             <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
-              <div
-                className={`h-full bg-emerald-500 transition-all`}
-                style={{ width: `${progress}%` }}
-              />
+              <div className="h-full bg-emerald-500 transition-all" style={{ width: `${progress}%` }} />
             </div>
             <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-600">
-              {steps.map((s, i) => {
+              {steps.map((s) => {
                 const idx = steps.findIndex((x) => x.key === phase);
                 const me = steps.findIndex((x) => x.key === s.key);
                 const active = me === idx;
@@ -191,7 +192,13 @@ export default function CreditReportAssistantPage() {
                 return (
                   <span
                     key={s.key}
-                    className={`px-2 py-0.5 rounded-full border ${done ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : active ? 'bg-gray-50 border-gray-300 text-gray-800' : 'bg-white border-gray-200 text-gray-500'}`}
+                    className={`px-2 py-0.5 rounded-full border ${
+                      done
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                        : active
+                        ? 'bg-gray-50 border-gray-300 text-gray-800'
+                        : 'bg-white border-gray-200 text-gray-500'
+                    }`}
                   >
                     {s.label}
                   </span>
@@ -225,7 +232,7 @@ export default function CreditReportAssistantPage() {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {reports.length === 0 && (
+          {!firstLoad && reports.length === 0 && ( // ← muestra el vacío sólo después de la primera carga
             <div className="col-span-full rounded-xl border p-6 text-sm text-muted-foreground">No reports yet.</div>
           )}
 
