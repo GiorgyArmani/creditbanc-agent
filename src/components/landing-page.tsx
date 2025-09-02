@@ -1,20 +1,37 @@
+// creditbanc-agent/src/components/landing-page.tsx
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Brain, TrendingUp, Users, Target, CheckCircle, Star, ArrowRight, Play, Zap, Shield, Clock } from "lucide-react"
+import {
+  Brain,
+  TrendingUp,
+  Users,
+  Target,
+  CheckCircle,
+  Star,
+  ArrowRight,
+  Play,
+  Zap,
+  Shield,
+  Clock,
+} from "lucide-react"
 
 interface LandingPageProps {
+  // kept for future use if you want to open a modal, but not required now
   onShowAuth?: () => void
 }
 
 /**
- * Landing page component for non-authenticated users
- * Features hero section, benefits, testimonials, and CTA
+ * CreditBanc AI — Landing (BETA)
+ * - Uses your original styles & copy (English)
+ * - No header here (we keep the header from app/page.tsx)
+ * - All CTAs point to /auth/sign-up or /auth/login
  */
-export function LandingPage({ onShowAuth }: LandingPageProps) {
+export function LandingPage(_props: LandingPageProps) {
   const [activeTestimonial, setActiveTestimonial] = useState(0)
 
   const features = [
@@ -54,7 +71,7 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
       name: "Sarah Johnson",
       role: "CEO, TechStart Inc.",
       content:
-        "Business Coach AI helped us identify new market opportunities and increase revenue by 150% in just 6 months.",
+        "CreditBanc AI helped us identify new market opportunities and increase revenue by 150% in just 6 months.",
       rating: 5,
     },
     {
@@ -74,7 +91,7 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
 
   const pricingPlans = [
     {
-      name: "Free Trial",
+      name: "Free (Beta)",
       price: "$0",
       period: "7 days",
       description: "Perfect for getting started",
@@ -83,7 +100,7 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
     },
     {
       name: "Professional",
-      price: "$49",
+      price: "$300",
       period: "month",
       description: "For growing businesses",
       features: [
@@ -98,7 +115,7 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
     },
     {
       name: "Enterprise",
-      price: "$149",
+      price: "$500",
       period: "month",
       description: "For established companies",
       features: [
@@ -115,21 +132,15 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50">
-      {/* Header */}
-      <header className="container mx-auto px-4 py-6">
-        <nav className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Brain className="h-8 w-8 text-emerald-600" />
-            <span className="text-2xl font-bold text-gray-900">Business Coach AI</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={onShowAuth}>
-              Sign In
-            </Button>
-            <Button onClick={onShowAuth}>Get Started</Button>
-          </div>
-        </nav>
-      </header>
+      {/* Top Beta Banner */}
+      <div className="w-full border-b">
+        <div className="container mx-auto px-4 py-2 text-center text-sm">
+          <Badge className="mr-2 bg-emerald-600 text-white hover:bg-emerald-600">BETA</Badge>
+          <span className="text-gray-700">
+            This is a <span className="font-semibold">CreditBanc</span> product in beta (MVP). We appreciate your feedback.
+          </span>
+        </div>
+      </div>
 
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20 text-center">
@@ -146,14 +157,23 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
             cutting-edge artificial intelligence.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" onClick={onShowAuth} className="text-lg px-8 py-3">
-              Start Free Trial
-              <ArrowRight className="ml-2 h-5 w-5" />
+            <Button size="lg" className="text-lg px-8 py-3" asChild>
+              <Link href="/auth/sign-up">
+                Start Free Trial
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
             </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8 py-3">
-              <Play className="mr-2 h-5 w-5" />
-              Watch Demo
+            <Button size="lg" variant="outline" className="text-lg px-8 py-3" asChild>
+              <Link href="/demo">
+                <Play className="mr-2 h-5 w-5" />
+                Watch Demo
+              </Link>
             </Button>
+          </div>
+          <div className="mt-4">
+            <Link href="/auth/login" className="text-sm text-emerald-700 hover:underline">
+              Already have an account? Log in
+            </Link>
           </div>
         </div>
       </section>
@@ -161,9 +181,9 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
       {/* Features Section */}
       <section className="container mx-auto px-4 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Choose Business Coach AI?</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Choose CreditBanc AI?</h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Leverage the power of artificial intelligence to accelerate your business growth
+            Leverage the power of artificial intelligence to accelerate your business growth.
           </p>
         </div>
 
@@ -244,7 +264,7 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
       <section className="container mx-auto px-4 py-20">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Trusted by Business Leaders</h2>
-          <p className="text-xl text-gray-600">See what our customers are saying about Business Coach AI</p>
+          <p className="text-xl text-gray-600">See what our customers are saying about CreditBanc AI</p>
         </div>
 
         <div className="max-w-4xl mx-auto">
@@ -255,9 +275,7 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
                   <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
                 ))}
               </div>
-              <blockquote className="text-xl text-gray-700 mb-6">
-                "{testimonials[activeTestimonial].content}"
-              </blockquote>
+              <blockquote className="text-xl text-gray-700 mb-6">"{testimonials[activeTestimonial].content}"</blockquote>
               <div>
                 <div className="font-semibold text-gray-900">{testimonials[activeTestimonial].name}</div>
                 <div className="text-gray-600">{testimonials[activeTestimonial].role}</div>
@@ -273,6 +291,7 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
                 className={`w-3 h-3 rounded-full transition-colors ${
                   index === activeTestimonial ? "bg-emerald-600" : "bg-gray-300"
                 }`}
+                aria-label={`Switch testimonial ${index + 1}`}
               />
             ))}
           </div>
@@ -312,8 +331,10 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
                       </li>
                     ))}
                   </ul>
-                  <Button className="w-full" variant={plan.popular ? "default" : "outline"} onClick={onShowAuth}>
-                    {plan.name === "Free Trial" ? "Start Free Trial" : "Get Started"}
+                  <Button className="w-full" asChild>
+                    <Link href="/auth/sign-up">
+                      {plan.name.startsWith("Free") ? "Start Free Trial" : "Get Started"}
+                    </Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -327,89 +348,60 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
         <div className="max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Ready to Transform Your Business?</h2>
           <p className="text-xl text-gray-600 mb-8">
-            Join thousands of business leaders who are already using AI to accelerate their growth.
+            Join thousands of business leaders already using AI to accelerate their growth.
           </p>
-          <Button size="lg" onClick={onShowAuth} className="text-lg px-8 py-3">
-            Start Your Free Trial Today
-            <ArrowRight className="ml-2 h-5 w-5" />
+          <Button size="lg" className="text-lg px-8 py-3" asChild>
+            <Link href="/auth/sign-up">
+              Start Your Free Trial Today
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
           </Button>
+          <div className="mt-3">
+            <Link href="/auth/login" className="text-sm text-emerald-700 hover:underline">
+              Prefer to log in?
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Footer (kept — optional if you want only the global footer) */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Brain className="h-6 w-6 text-emerald-400" />
-                <span className="text-xl font-bold">Business Coach AI</span>
+                <span className="text-xl font-bold">CreditBanc AI</span>
               </div>
               <p className="text-gray-400">Empowering businesses with AI-driven strategic insights and coaching.</p>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-gray-400">
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Features
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Pricing
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white">
-                    API
-                  </a>
-                </li>
+                <li><a href="#" className="hover:text-white">Features</a></li>
+                <li><a href="#" className="hover:text-white">Pricing</a></li>
+                <li><a href="#" className="hover:text-white">API</a></li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Company</h3>
               <ul className="space-y-2 text-gray-400">
-                <li>
-                  <a href="#" className="hover:text-white">
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Blog
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Careers
-                  </a>
-                </li>
+                <li><a href="#" className="hover:text-white">About</a></li>
+                <li><a href="#" className="hover:text-white">Blog</a></li>
+                <li><a href="#" className="hover:text-white">Careers</a></li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-gray-400">
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Help Center
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Contact
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Privacy
-                  </a>
-                </li>
+                <li><a href="#" className="hover:text-white">Help Center</a></li>
+                <li><a href="#" className="hover:text-white">Contact</a></li>
+                <li><a href="#" className="hover:text-white">Privacy</a></li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Business Coach AI. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} CreditBanc AI. All rights reserved.</p>
           </div>
         </div>
       </footer>
