@@ -147,9 +147,7 @@ export default function CreditReportAssistantPage() {
           <h1 className="text-3xl font-semibold tracking-tight">Credit Report Assistant</h1>
           <p className="text-sm text-muted-foreground mt-1">Paste a report → we analyze it and deliver a branded PDF.</p>
         </div>
-        <Link href="/dashboard">
-          <Button variant="outline">← Back to Dashboard</Button>
-        </Link>
+       
       </div>
 
       {/* Composer */}
