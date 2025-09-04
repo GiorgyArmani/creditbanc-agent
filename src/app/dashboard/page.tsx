@@ -6,23 +6,59 @@ import ModuleCard from '@/components/module-card'
 import { LogoutButton } from '@/components/logout-button'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { TrendingUp, Calendar } from 'lucide-react'
+import { TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import CreditScoreWidget from '@/components/credit-score-widget'
 import CreditGoalsWidget from '@/components/credit-goals-widget'
+import DashboardProgressHero from '@/components/dashboard-progress-hero'
+
+// % de capital readiness (25 items)
+async function fetchCapitalReadinessPercent(
+  supabase: ReturnType<typeof createClient>,
+  totalItems = 25
+) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return 0
+
+  const { data, error } = await supabase
+    .from('user_capital_readiness')
+    .select('checked')
+    .eq('user_id', user.id)
+    .eq('checked', true)
+
+  if (error) {
+    console.error('readiness count error', error)
+    return 0
+  }
+  const completed = data?.length ?? 0
+  return Math.round((completed / totalItems) * 100)
+}
 
 export default function CourseDashboard() {
   const [creditScore, setCreditScore] = useState(720)
   const [targetScore, setTargetScore] = useState(750)
   const [userName, setUserName] = useState<string | null>(null)
   const [modules, setModules] = useState<any[]>([])
+
+  // progresos
   const [courseProgress, setCourseProgress] = useState(0)
+  const [capitalReadiness, setCapitalReadiness] = useState(0)
+  const [programProgress, setProgramProgress] = useState<number | null>(null)
+  const [nextModule, setNextModule] = useState<any | null>(null)
+
+  // 👉 CTA directo a la lección actual
+  const [nextLessonHref, setNextLessonHref] = useState<string | undefined>(undefined)
+  const [nextLessonTitle, setNextLessonTitle] = useState<string | undefined>(undefined)
 
   useEffect(() => {
-    const fetchData = async () => {
-      const supabase = createClient()
+    const supabase = createClient()
+
+    // ajusta si tu ruta real de lecciones es otra
+    const buildLessonUrl = (moduleId: string, lessonId: string) =>
+      `/module/${moduleId}?lesson=${lessonId}`
+
+    const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (user) {
@@ -31,46 +67,112 @@ export default function CourseDashboard() {
         setUserName(nameFromMetadata ?? fallback ?? 'User')
       }
 
+      // ------- Módulos y Lecciones (ordenados) -------
       const { data: moduleData } = await supabase
         .from('academy_modules')
-        .select('*')
+        .select('id, title, display_order')
         .order('display_order', { ascending: true })
 
       const { data: lessonsData } = await supabase
         .from('academy_lessons')
-        .select('id, module_id')
+        .select('id, module_id, title, display_order')
+        .order('display_order', { ascending: true })
 
       const { data: progressData } = await supabase
         .from('user_progress')
-        .select('lesson_id, completed')
-        .eq('user_id', user?.id)
+        .select('lesson_id, module_id, completed')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
 
-      if (!moduleData) return
+      let cp = 0
+      let nm: any | null = null
 
-      // Armar cada módulo con lecciones y progreso
-      const modulesWithProgress = moduleData.map((mod) => {
-        const lessons = lessonsData?.filter((l) => l.module_id === mod.id) || []
-        const completed = progressData?.filter((p) =>
-          lessons.some((l) => l.id === p.lesson_id && p.completed)
-        ) || []
+      if (moduleData) {
+        const modulesWithProgress = moduleData.map((mod) => {
+          const lessons = (lessonsData || []).filter((l) => l.module_id === mod.id)
+          const completed = (progressData || []).filter(
+            (p) => p.completed && lessons.some((l) => l.id === p.lesson_id)
+          )
+          return {
+            ...mod,
+            total_lessons: lessons.length,
+            completed_lessons: completed.length,
+          }
+        })
 
-        return {
-          ...mod,
-          total_lessons: lessons.length,
-          completed_lessons: completed.length,
-          duration: mod.duration ?? '—', // si no existe la columna, puedes omitir esto
-          type: mod.type ?? 'video'      // si no existe, default
+        setModules(modulesWithProgress)
+
+        const totalLessons = modulesWithProgress.reduce((sum, m) => sum + m.total_lessons, 0)
+        const completedLessons = modulesWithProgress.reduce((sum, m) => sum + m.completed_lessons, 0)
+        cp = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0
+        setCourseProgress(cp)
+
+        // siguiente módulo con pendientes (primer módulo por display_order)
+        nm = modulesWithProgress.find(m => m.completed_lessons < m.total_lessons) || null
+        setNextModule(nm)
+
+        // primera lección pendiente dentro de ese módulo (por display_order)
+        if (nm) {
+          const moduleLessons = (lessonsData || [])
+            .filter(l => l.module_id === nm.id)
+            .sort((a, b) => a.display_order - b.display_order)
+
+          const completedSet = new Set(
+            (progressData || []).filter(p => p.completed).map(p => p.lesson_id)
+          )
+
+          const pendingLesson = moduleLessons.find(l => !completedSet.has(l.id))
+          if (pendingLesson) {
+            setNextLessonHref(buildLessonUrl(nm.id, pendingLesson.id))
+            setNextLessonTitle(pendingLesson.title)
+          } else {
+            setNextLessonHref(undefined)
+            setNextLessonTitle(undefined)
+          }
+        } else {
+          setNextLessonHref(undefined)
+          setNextLessonTitle(undefined)
         }
-      })
+      }
 
-      setModules(modulesWithProgress)
+      // ------- Capital Readiness -------
+      const readinessPercent = await fetchCapitalReadinessPercent(supabase, 25)
+      setCapitalReadiness(readinessPercent)
 
-      const totalLessons = modulesWithProgress.reduce((sum, m) => sum + m.total_lessons, 0)
-      const completedLessons = modulesWithProgress.reduce((sum, m) => sum + m.completed_lessons, 0)
-      setCourseProgress(totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0)
+      // ------- Blend 70/30 -------
+      const blended = Math.round((cp * 0.7) + (readinessPercent * 0.3))
+      setProgramProgress(blended)
     }
 
-    fetchData()
+    load()
+
+    // realtime: refrescar cuando cambie readiness o progreso (solo del usuario actual)
+    ;(async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      const uid = user?.id
+
+      const chReadiness = supabase
+        .channel('rt-capital-readiness')
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'user_capital_readiness', filter: `user_id=eq.${uid}` },
+          load
+        )
+        .subscribe()
+
+      const chProgress = supabase
+        .channel('rt-user-progress')
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'user_progress', filter: `user_id=eq.${uid}` },
+          load
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(chReadiness)
+        supabase.removeChannel(chProgress)
+      }
+    })()
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
@@ -87,7 +189,7 @@ export default function CourseDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                Premium Member
+                BETA Member
               </Badge>
               <div className="h-8 w-8 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
               <LogoutButton />
@@ -105,25 +207,17 @@ export default function CourseDashboard() {
           <p className="text-slate-600">Master your credit and take control of your financial future</p>
         </div>
 
-        {/* Progress */}
-        <Card className="mb-8 bg-white/80 border-slate-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-slate-900 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-emerald-500" />
-              Course Progress
-            </CardTitle>
-            <CardDescription className="text-slate-600">You're making great progress! Keep it up.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Overall Completion</span>
-                <span className="text-emerald-400 font-medium">{courseProgress}%</span>
-              </div>
-              <Progress value={courseProgress} className="h-2" />
-            </div>
-          </CardContent>
-        </Card>
+        {/* 🚀 Progress Hero */}
+        <div className="mb-8">
+          <DashboardProgressHero
+            courseProgress={courseProgress}
+            capitalReadiness={capitalReadiness}
+            programProgress={programProgress}
+            nextModule={nextModule}
+            nextLessonHref={nextLessonHref}      // 👈 botón directo a la lección
+            nextLessonTitle={nextLessonTitle}
+          />
+        </div>
 
         {/* Credit Widgets */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
