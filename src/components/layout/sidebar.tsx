@@ -4,18 +4,34 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  MessageSquare, TrendingUp, FileSearch, Calendar, LogOut, User, BookMarked, X
+  MessageSquare,
+  TrendingUp,
+  FileSearch,
+  Calendar,
+  LogOut,
+  User,
+  BookMarked,
+  X,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
 type SidebarProps = {
-  isOpen?: boolean        // mobile only
-  onClose?: () => void    // mobile only
+  mobileOpen?: boolean
+  onMobileClose?: () => void
+  collapsed?: boolean
+  onToggleCollapsed?: () => void
 }
 
-export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
+export function Sidebar({
+  mobileOpen = false,
+  onMobileClose,
+  collapsed = false,
+  onToggleCollapsed,
+}: SidebarProps) {
   const pathname = usePathname()
   const supabase = createClient()
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -42,84 +58,130 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     { label: 'Business Profile', href: '/dashboard/business-profile', icon: User },
   ]
 
-  // Contenedor base del sidebar (estático en md+, off-canvas en mobile)
+  // Ancho: en mobile siempre w-72; en desktop depende de "collapsed"
+  const desktopWidth = collapsed ? 'md:w-16' : 'md:w-64'
+
   return (
     <>
-      {/* Overlay para mobile */}
+      {/* Overlay (mobile) */}
       <div
-        aria-hidden={!isOpen}
-        className={`fixed inset-0 z-40 bg-black/40 transition-opacity md:hidden ${isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
-        onClick={onClose}
+        className={`fixed inset-0 z-40 bg-black/40 transition-opacity md:hidden ${
+          mobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onMobileClose}
       />
 
+      {/* Sidebar */}
       <aside
-        role="dialog"
-        aria-modal="true"
         aria-label="Sidebar navigation"
         className={[
-          // tamaño/estilo
-          'fixed z-50 top-0 left-0 h-screen w-64 bg-white border-r shadow-sm flex flex-col justify-between',
-          // animación off-canvas
+          // altura + scroll, y sin scroll horizontal
+          'fixed left-0 top-0 z-50 flex h-dvh md:h-screen w-72 flex-col bg-white border-r shadow-sm overflow-y-auto overflow-x-hidden',
+          // animación drawer
           'transition-transform duration-300 ease-in-out',
-          isOpen ? 'translate-x-0' : '-translate-x-full',
-          // en md+ siempre visible y estático
-          'md:translate-x-0 md:static md:z-auto'
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+          'md:translate-x-0',
+          desktopWidth,
         ].join(' ')}
       >
         {/* Header */}
-        <div>
-          <div className="p-6 flex items-center justify-between">
-            <div>
+        <div className="sticky top-0 bg-white">
+          <div className="flex items-center justify-between px-4 py-3 md:justify-center border-b">
+            {/* En desktop colapsado: ocultar branding totalmente */}
+            <div className={collapsed ? 'hidden' : 'block'}>
               <h2 className="text-xl font-bold text-emerald-600">Business Coach</h2>
               <p className="text-sm text-gray-500">AI-powered guidance</p>
             </div>
-            {/* Close en mobile */}
             <button
-              onClick={onClose}
+              onClick={onMobileClose}
               className="md:hidden inline-flex h-8 w-8 items-center justify-center rounded hover:bg-gray-100"
               aria-label="Close sidebar"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
-
-          {/* Navigation */}
-          <nav className="p-4 space-y-2">
-            {navItems.map(({ href, label, icon: Icon }) => (
-              <Link href={href} key={href} onClick={onClose}>
-                <Button
-                  variant={pathname === href ? 'default' : 'ghost'}
-                  className={`w-full justify-start ${
-                    pathname === href ? 'bg-emerald-500 text-white' : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <Icon className="h-5 w-5 mr-3" />
-                  {label}
-                </Button>
-              </Link>
-            ))}
-          </nav>
         </div>
 
+        {/* Navigation */}
+        <nav className="px-3 py-3 space-y-1">
+          {navItems.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href
+            return (
+              <Link href={href} key={href} onClick={onMobileClose} title={collapsed ? label : undefined} aria-label={collapsed ? label : undefined}>
+                <Button
+                  variant={active ? 'default' : 'ghost'}
+                  className={[
+                    'w-full h-11 rounded-md',
+                    // Desktop colapsado: solo ícono centrado, sin padding
+                    collapsed ? 'md:justify-center md:px-0' : 'justify-start px-3',
+                    active ? 'bg-emerald-500 text-white' : 'text-gray-700 hover:bg-gray-100',
+                  ].join(' ')}
+                >
+                  <Icon className={['h-5 w-5', collapsed ? 'md:mr-0' : 'mr-3', 'shrink-0'].join(' ')} />
+                  {/* En mobile SIEMPRE mostrar etiqueta; en desktop ocultar si colapsado */}
+                  <span className={collapsed ? 'md:hidden inline' : 'inline'}>{label}</span>
+                </Button>
+              </Link>
+            )
+          })}
+        </nav>
+
         {/* Footer */}
-        <div className="p-4 border-t bg-gray-50">
-          <div className="flex items-center space-x-3 mb-3">
+        <div className="mt-auto px-3 pb-3 pt-2 border-t bg-gray-50">
+          {/* Identidad:
+              - mobile y desktop expandido: visible
+              - desktop colapsado: oculto (para no “aplastar” texto) */}
+          <div className={`space-x-3 mb-3 items-center ${collapsed ? 'hidden md:flex md:hidden' : 'flex'}`}>
             <div className="bg-emerald-100 rounded-full p-2">
               <User className="h-5 w-5 text-emerald-600" />
             </div>
-            <div>
-              <p className="font-medium text-gray-800 truncate">
-                {userEmail?.split('@')[0] || 'User'}
-              </p>
+            <div className="min-w-0">
+              <p className="font-medium text-gray-800 truncate">{userEmail?.split('@')[0] || 'User'}</p>
               <Badge className="bg-green-100 text-green-800 text-xs">Free Plan</Badge>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={handleSignOut} className="w-full text-gray-700">
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
+
+          {/* Logout:
+              - mobile y desktop expandido: botón completo
+              - desktop colapsado: solo ícono (sin texto) */}
+          <div className="flex items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              className={`w-full text-gray-700 ${collapsed ? 'md:hidden' : ''}`}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              <span>Sign Out</span>
+            </Button>
+
+            <button
+              onClick={handleSignOut}
+              aria-label="Sign out"
+              title="Sign Out"
+              className={`hidden ${collapsed ? 'md:inline-flex' : 'md:hidden'} ml-0 items-center justify-center w-10 h-10 rounded-md border text-gray-700 hover:bg-gray-100`}
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </aside>
+
+      {/* Botón colapsar/expandir (solo desktop) */}
+      <button
+        onClick={() => {
+          const next = !collapsed
+          onToggleCollapsed?.()
+          localStorage.setItem('sidebar_collapsed', next ? '1' : '0')
+        }}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        className="hidden md:flex fixed left-3 z-[60] h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow hover:bg-emerald-600"
+        // colócalo justo encima del footer (ajusta si cambias padding del footer)
+        style={{ bottom: 96 }}
+        title={collapsed ? 'Expand' : 'Collapse'}
+      >
+        {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
+      </button>
     </>
   )
 }

@@ -191,8 +191,6 @@ export default function CourseDashboard() {
               <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
                 BETA Member
               </Badge>
-              <div className="h-8 w-8 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
-              <LogoutButton />
             </div>
           </div>
         </div>
