@@ -1,7 +1,7 @@
-"use client"
-import { useState, useEffect, type ReactNode } from "react"
-import OnboardingModal from "./onboarding-modal"
-import { useOnboardingStatus } from "./use-onboarding-status"
+'use client'
+import { useState, useEffect, type ReactNode } from 'react'
+import OnboardingModal from './onboarding-modal'
+import { useOnboardingStatus } from './use-onboarding-status'
 
 type OnboardingGateProps = { children: ReactNode }
 
@@ -11,15 +11,22 @@ export default function OnboardingGate({ children }: OnboardingGateProps) {
 
   useEffect(() => {
     if (loading) return
-    const skipped = sessionStorage.getItem("skipOnboarding") === "true"
-    // open if needed and not skipped in THIS tab
+    const skipped = sessionStorage.getItem('skipOnboarding') === 'true'
     setOpen(needsOnboarding && !skipped)
-    // DEBUG (remove later)
-    // console.log("[Gate]", { needsOnboarding, loading, skipped })
   }, [needsOnboarding, loading])
 
+  // Lock del body solo mientras el modal está abierto
+  useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [open])
+
   const handleSkipThisSession = () => {
-    sessionStorage.setItem("skipOnboarding", "true")
+    sessionStorage.setItem('skipOnboarding', 'true')
     setOpen(false)
   }
 
