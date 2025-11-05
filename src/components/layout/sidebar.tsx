@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { ThemeSwitcher } from '@/components/theme-switcher'
 import {
   MessageSquare,
   TrendingUp,
@@ -91,8 +92,8 @@ export function Sidebar({
           <div className="flex items-center justify-between px-4 py-3 md:justify-center border-b">
             {/* En desktop colapsado: ocultar branding totalmente */}
             <div className={collapsed ? 'hidden' : 'block'}>
-              <h2 className="text-xl font-bold text-emerald-600">Business Coach</h2>
-              <p className="text-sm text-gray-500">AI-powered guidance</p>
+              <img src="header-logo.png" alt="Logo" className="h-10 w-50 mb-1" />
+              <p className="text-center text-sm text-gray-500">AI-powered Credit Building</p>
             </div>
             <button
               onClick={onMobileClose}
