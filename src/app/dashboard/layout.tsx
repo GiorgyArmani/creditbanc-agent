@@ -29,7 +29,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const currentTitle = useMemo(() => {
     const map: Record<string, string> = {
       '/dashboard': 'Finance Academy',
-      '/dashboard/chat': 'AI Chat',
+      '/dashboard/chat': 'AI Coach',
       '/dashboard/credit-report-assistant': 'Credit Report Assistant',
       '/dashboard/book-consultation': 'Book Consultation',
       '/dashboard/business-vault': 'Business Vault',

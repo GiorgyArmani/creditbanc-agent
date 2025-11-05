@@ -145,7 +145,7 @@ export default function CreditReportAssistantPage() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Credit Report Assistant</h1>
-          <p className="text-sm text-muted-foreground mt-1">Paste a report → we analyze it and deliver a branded PDF.</p>
+          <p className="text-sm text-muted-foreground mt-1">Paste a report → we analyze it and deliver an Insign PDF.</p>
         </div>
         <Link href="/dashboard">
           <Button variant="outline">← Back to Dashboard</Button>

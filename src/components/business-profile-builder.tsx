@@ -133,10 +133,6 @@ export function BusinessProfileBuilder({
       <header className="bg-white border-b px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
             <div>
               <h1 className="text-xl font-bold">Business Profile</h1>
               <p className="text-sm text-gray-600">Keep your details up to date for better coaching</p>

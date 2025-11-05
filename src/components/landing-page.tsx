@@ -49,12 +49,8 @@ export function LandingPage(_props: LandingPageProps) {
       icon: Target,
       title: "Strategic Planning",
       description: "Develop comprehensive business strategies tailored to your industry and goals",
-    },
-    {
-      icon: Users,
-      title: "Team Optimization",
-      description: "Optimize team performance and organizational structure for maximum efficiency",
-    },
+    }
+    
   ]
 
   const benefits = [
@@ -146,7 +142,7 @@ export function LandingPage(_props: LandingPageProps) {
       <section className="container mx-auto px-4 py-20 text-center">
         <div className="max-w-4xl mx-auto">
           <Badge className="mb-4 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-            🚀 Transform Your Business Strategy
+            🚀 Transform Your Business Credit Score
           </Badge>
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
             AI-Powered Business
@@ -181,7 +177,7 @@ export function LandingPage(_props: LandingPageProps) {
       {/* Features Section */}
       <section className="container mx-auto px-4 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Choose CreditBanc AI?</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Choose Credit Banc Finance Academy?</h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Leverage the power of artificial intelligence to accelerate your business growth.
           </p>

@@ -14,6 +14,8 @@ import {
   X,
   ChevronsLeft,
   ChevronsRight,
+  BrainCircuitIcon,
+  Brain,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -51,7 +53,7 @@ export function Sidebar({
 
   const navItems = [
     { label: 'Finance Academy', href: '/dashboard', icon: TrendingUp },
-    { label: 'AI Chat', href: '/dashboard/chat', icon: MessageSquare },
+    { label: 'AI Coach', href: '/dashboard/chat', icon: Brain },
     { label: 'Credit Report Assistant', href: '/dashboard/credit-report-assistant', icon: FileSearch },
     { label: 'Book Consultation', href: '/dashboard/book-consultation', icon: Calendar },
     { label: 'Business Vault', href: '/dashboard/business-vault', icon: BookMarked },
