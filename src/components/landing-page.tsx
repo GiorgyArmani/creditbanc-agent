@@ -295,8 +295,7 @@ export function LandingPage(_props: LandingPageProps) {
           <div className="container mx-auto px-4">
             <div className="flex h-16 items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Brain className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-xl font-bold text-gray-900 dark:text-white">Credit Banc Finance Academy</span>
+                <img src="falogo.png" alt="Logo" className="h-20 w-100" />
               </div>
               <div className="flex items-center space-x-4">
                 <ThemeSwitcher />
@@ -630,10 +629,9 @@ export function LandingPage(_props: LandingPageProps) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               <div className="col-span-2 md:col-span-1">
                 <div className="flex items-center space-x-2 mb-4">
-                  <Brain className="h-6 w-6 text-emerald-400" />
-                  <span className="text-xl font-bold">Credit Banc Finance Academy</span>
+                  <img src="falogo.png" alt="Logo" className="h-20 w-100" />
                 </div>
-                <p className="text-gray-400 text-sm">
+                <p className="text-gray-300 text-sm">
                   Empowering businesses with AI-driven credit building, financial education, and tailored lending
                   solutions.
                 </p>
