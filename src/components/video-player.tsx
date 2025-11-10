@@ -11,6 +11,31 @@ export interface VideoPlayerProps {
   description?: string | null  // Optional description from database
 }
 
+// Helper function to convert URLs in text to clickable links
+function linkifyText(text: string) {
+  // Regex to match URLs
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+  const parts = text.split(urlRegex)
+  
+  return parts.map((part, index) => {
+    // Check if this part is a URL
+    if (urlRegex.test(part)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-emerald-600 hover:text-emerald-700 underline font-medium transition-colors"
+        >
+          {part}
+        </a>
+      )
+    }
+    return <span key={index}>{part}</span>
+  })
+}
+
 export default function VideoPlayer({ 
   videoUrl, 
   title, 
@@ -85,7 +110,10 @@ export default function VideoPlayer({
                 {title}
               </h3>
               <p className="text-slate-600 text-sm leading-relaxed">
-                {description || "Watch this lesson and apply the concepts to grow your business and improve your financial health!"}
+                {description 
+                  ? linkifyText(description)
+                  : "Watch this lesson and apply the concepts to grow your business and improve your financial health!"
+                }
               </p>
             </div>
           </div>
