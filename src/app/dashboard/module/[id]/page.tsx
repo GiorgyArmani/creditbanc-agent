@@ -176,7 +176,7 @@ export default function ModulePage() {
     <div className="flex items-center gap-4">
       {progressPercent === 100 && nextModule && (
         <Button
-          className="bg-indigo-600 hover:bg-indigo-700"
+          className="bg-emerald-500/10 hover:bg-emerald-700"
           onClick={() => router.push(`/dashboard/module/${nextModule.id}`)}
         >
           Next module: {nextModule.title}
@@ -284,7 +284,7 @@ export default function ModulePage() {
                 <PartyPopper className="w-5 h-5" /> Module complete!
               </h3>
               <Button
-                className="bg-indigo-600 hover:bg-indigo-700"
+                className="emerald-500/10 hover:bg-emerald-700"
                 onClick={() => router.push(`/dashboard/module/${nextModule.id}`)}
               >
                 Go to next module: {nextModule.title}

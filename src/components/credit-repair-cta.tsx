@@ -15,7 +15,7 @@ export default function CreditRepairCTA({
   description = "Connect with a certified credit repair specialist for personalized assistance",
 }: CreditRepairCTAProps) {
   return (
-    <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 mt-6">
+    <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-emerald-200 mt-6">
       <CardHeader>
         <CardTitle className="text-slate-900 flex items-center gap-2">
           <Phone className="h-5 w-5 text-blue-600" />
@@ -42,7 +42,7 @@ export default function CreditRepairCTA({
 
         <div className="flex flex-col sm:flex-row gap-3">
           <Link href="/dashboard/book-consultation" className="flex-1">
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
               <Phone className="h-4 w-4 mr-2" />
               Book Free Consultation
             </Button>
