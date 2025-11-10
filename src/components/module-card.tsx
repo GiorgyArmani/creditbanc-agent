@@ -49,7 +49,11 @@ export default function ModuleCard({ module }: { module: any }) {
             </div>
             <div>
               <h4 className="text-lg font-semibold text-slate-900 mb-1">{module.title}</h4>
-              <p className="text-slate-600 text-sm mb-2">{module.description}</p>
+              {module.description && (
+                <p className="text-slate-600 text-sm mb-2 line-clamp-2 max-w-2xl">
+                  {module.description}
+                </p>
+              )}
               <div className="flex items-center space-x-4 text-xs text-slate-500">
                 <span className="flex items-center gap-1">
                   <Users className="h-3 w-3" />

@@ -70,7 +70,7 @@ export default function CourseDashboard() {
       // ------- Módulos y Lecciones (ordenados) -------
       const { data: moduleData } = await supabase
         .from('academy_modules')
-        .select('id, title, display_order')
+        .select('id, title, description, display_order')
         .order('display_order', { ascending: true })
 
       const { data: lessonsData } = await supabase
