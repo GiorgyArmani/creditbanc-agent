@@ -92,7 +92,7 @@ export function Sidebar({
           <div className="flex items-center justify-between px-4 py-3 md:justify-center border-b">
             {/* En desktop colapsado: ocultar branding totalmente */}
             <div className={collapsed ? 'hidden' : 'block'}>
-              <img src="falogo.png" alt="Logo" className="h-50 w-100 mb-1" />
+              <img src="falogo.svg" alt="Logo" className="h-60 w-100 mb-1" />
               <p className="text-center text-sm text-gray-500">AI-powered Credit Building</p>
             </div>
             <button

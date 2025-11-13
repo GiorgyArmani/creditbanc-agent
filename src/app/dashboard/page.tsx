@@ -47,7 +47,7 @@ export default function CourseDashboard() {
   const [programProgress, setProgramProgress] = useState<number | null>(null)
   const [nextModule, setNextModule] = useState<any | null>(null)
 
-  // 👉 CTA directo a la lección actual
+  // CTA directo a la lección actual
   const [nextLessonHref, setNextLessonHref] = useState<string | undefined>(undefined)
   const [nextLessonTitle, setNextLessonTitle] = useState<string | undefined>(undefined)
 
@@ -205,14 +205,14 @@ export default function CourseDashboard() {
           <p className="text-slate-600">Master your credit and take control of your financial future</p>
         </div>
 
-        {/* 🚀 Progress Hero */}
+        {/*  Progress Hero */}
         <div className="mb-8">
           <DashboardProgressHero
             courseProgress={courseProgress}
             capitalReadiness={capitalReadiness}
             programProgress={programProgress}
             nextModule={nextModule}
-            nextLessonHref={nextLessonHref}      // 👈 botón directo a la lección
+            nextLessonHref={nextLessonHref}      //  botón directo a la lección
             nextLessonTitle={nextLessonTitle}
           />
         </div>
