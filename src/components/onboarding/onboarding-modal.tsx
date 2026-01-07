@@ -53,6 +53,31 @@ export default function OnboardingModal({
     } = await supabase.auth.getUser();
     if (!user) return;
 
+    // 1) Ensure record in public.users exists (Fixes FK violation)
+    const { data: dbUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!dbUser) {
+      console.log("Provisioning missing user record...");
+      const firstName = user.user_metadata?.first_name || user.user_metadata?.full_name?.split(" ")[0] || "User";
+      const lastName = user.user_metadata?.last_name || user.user_metadata?.full_name?.split(" ").slice(1).join(" ") || "";
+
+      await fetch("/api/post-signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          firstName,
+          lastName,
+          email: user.email,
+          tags: ["repair-onboarding"],
+        }),
+      });
+    }
+
     const finalProfile: BusinessProfile = {
       business_name: profile.business_name ?? undefined,
       business_description: profile.business_description ?? undefined,
@@ -75,6 +100,7 @@ export default function OnboardingModal({
 
     if (error) {
       console.error("Error saving profile:", error);
+      alert(`Error saving profile: ${error.message}`);
       return;
     }
     // Emit event to close the modal
