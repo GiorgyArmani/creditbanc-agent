@@ -25,7 +25,6 @@ export function ForgotPasswordForm({
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[ForgotPasswordForm] Submitting request via custom API flow');
     setIsLoading(true);
     setError(null);
 

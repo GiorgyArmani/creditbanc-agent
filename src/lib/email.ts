@@ -23,7 +23,6 @@ export interface EmailOptions {
  */
 export async function sendEmail({ to, subject, html, text }: EmailOptions) {
     try {
-        console.log(`[EmailService] Attempting to send email to ${to} using host ${process.env.SMTP_HOST}`);
         const info = await transporter.sendMail({
             from: `"${process.env.SMTP_FROM_NAME}" <${process.env.SMTP_FROM_EMAIL}>`,
             to,
@@ -32,10 +31,10 @@ export async function sendEmail({ to, subject, html, text }: EmailOptions) {
             text: text || stripHtml(html), // Fallback to stripped HTML if no text provided
         });
 
-        console.log('[EmailService] Email sent successfully. MessageID:', info.messageId);
+        console.log('Email sent successfully:', info.messageId);
         return { success: true, messageId: info.messageId };
     } catch (error) {
-        console.error('[EmailService] Error sending email:', error);
+        console.error('Error sending email:', error);
         throw error;
     }
 }
