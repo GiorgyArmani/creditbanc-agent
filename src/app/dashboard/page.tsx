@@ -139,38 +139,40 @@ export default function CourseDashboard() {
       setCapitalReadiness(readinessPercent)
 
       // ------- Blend 70/30 -------
-      const blended = Math.round((cp * 0.7) + (readinessPercent * 0.3))
-      setProgramProgress(blended)
+      // ------- Blend 70/30 -------
+      // const blended = Math.round((cp * 0.7) + (readinessPercent * 0.3))
+      // setProgramProgress(blended)
+      setProgramProgress(cp)
     }
 
     load()
 
-    // realtime: refrescar cuando cambie readiness o progreso (solo del usuario actual)
-    ;(async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      const uid = user?.id
+      // realtime: refrescar cuando cambie readiness o progreso (solo del usuario actual)
+      ; (async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        const uid = user?.id
 
-      const chReadiness = supabase
-        .channel('rt-capital-readiness')
-        .on('postgres_changes',
-          { event: '*', schema: 'public', table: 'user_capital_readiness', filter: `user_id=eq.${uid}` },
-          load
-        )
-        .subscribe()
+        const chReadiness = supabase
+          .channel('rt-capital-readiness')
+          .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'user_capital_readiness', filter: `user_id=eq.${uid}` },
+            load
+          )
+          .subscribe()
 
-      const chProgress = supabase
-        .channel('rt-user-progress')
-        .on('postgres_changes',
-          { event: '*', schema: 'public', table: 'user_progress', filter: `user_id=eq.${uid}` },
-          load
-        )
-        .subscribe()
+        const chProgress = supabase
+          .channel('rt-user-progress')
+          .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'user_progress', filter: `user_id=eq.${uid}` },
+            load
+          )
+          .subscribe()
 
-      return () => {
-        supabase.removeChannel(chReadiness)
-        supabase.removeChannel(chProgress)
-      }
-    })()
+        return () => {
+          supabase.removeChannel(chReadiness)
+          supabase.removeChannel(chProgress)
+        }
+      })()
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -242,9 +244,9 @@ export default function CourseDashboard() {
               <Link href="/dashboard/chat">
                 <Button variant="outline" className="w-full h-16">💬 AI Business Coach</Button>
               </Link>
-              <Link href="/dashboard/assessment">
+              {/* <Link href="/dashboard/assessment">
                 <Button variant="outline" className="w-full h-16">📋 Action Assessments</Button>
-              </Link>
+              </Link> */}
               <Link href="/dashboard/book-consultation">
                 <Button className="w-full h-16 bg-emerald-600 hover:bg-emerald-700 text-white">
                   📅 Book Financial Advisor Call

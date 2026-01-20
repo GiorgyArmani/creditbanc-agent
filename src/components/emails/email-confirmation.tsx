@@ -20,7 +20,7 @@ export function EmailConfirmation({ confirmationLink, userEmail }: EmailConfirma
           <!-- Header -->
           <tr>
             <td style="padding: 40px 40px 20px 40px; text-align: center; background: linear-gradient(135deg, #55cf9e 0%, #3da87a 100%); border-radius: 8px 8px 0 0;">
-              <img src="${process.env.NEXT_PUBLIC_SITE_URL}/falogo.png" alt="Finance Academy" style="max-width: 200px; height: auto;" />
+              <img src="${process.env.NEXT_PUBLIC_SITE_URL}/finance%20academy%20logo%20white.svg" alt="Finance Academy" style="max-width: 200px; height: auto;" />
             </td>
           </tr>
           
