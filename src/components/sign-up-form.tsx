@@ -72,6 +72,21 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         throw new Error(message || "Failed post-signup flow");
       }
 
+      // Send welcome email
+      await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'welcome',
+          to: email.trim().toLowerCase(),
+          data: {
+            userName: firstName.trim(),
+            userEmail: email.trim().toLowerCase(),
+            dashboardLink: `${redirectUrl}/dashboard`,
+          },
+        }),
+      }).catch(err => console.error('Failed to send welcome email:', err));
+
       router.push("/auth/sign-up-success");
     } catch (err: any) {
       setError(err?.message || "An error occurred");
