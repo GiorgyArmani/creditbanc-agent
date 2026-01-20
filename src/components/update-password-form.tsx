@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function UpdatePasswordForm({
   className,
@@ -22,13 +22,40 @@ export function UpdatePasswordForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSessionChecking, setIsSessionChecking] = useState(true);
+  const [hasSession, setHasSession] = useState(false);
   const router = useRouter();
+  const supabase = createClient();
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setHasSession(!!session);
+      setIsSessionChecking(false);
+    };
+
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasSession(!!session);
+      setIsSessionChecking(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
     setIsLoading(true);
     setError(null);
+
+    if (!hasSession) {
+      setError("Invalid or expired reset link. Please try requesting a new password reset.");
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const { error } = await supabase.auth.updateUser({ password });
@@ -42,6 +69,18 @@ export function UpdatePasswordForm({
     }
   };
 
+  if (isSessionChecking) {
+    return (
+      <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <p>Verifying secure link...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -52,7 +91,7 @@ export function UpdatePasswordForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleForgotPassword}>
+          <form onSubmit={handleUpdatePassword}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
                 <Label htmlFor="password">New password</Label>
@@ -66,7 +105,7 @@ export function UpdatePasswordForm({
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || !hasSession}>
                 {isLoading ? "Saving..." : "Save new password"}
               </Button>
             </div>
