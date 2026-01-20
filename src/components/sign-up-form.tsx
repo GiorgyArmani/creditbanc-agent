@@ -12,9 +12,9 @@ import { useState } from "react";
 
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
   const [firstName, setFirstName] = useState("");
-  const [lastName,  setLastName]  = useState(""); // 👈 opcional (puede quedar vacío)
-  const [email,     setEmail]     = useState("");
-  const [password,  setPassword]  = useState("");
+  const [lastName, setLastName] = useState(""); // 👈 opcional (puede quedar vacío)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,11 +38,12 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
     }
 
     try {
+      const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: `${redirectUrl}/dashboard`,
         },
       });
       if (error) throw error;
